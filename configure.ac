@@ -39,6 +39,8 @@ AC_PATH_PROG(LATEX,latex,/bin/true)
 AC_PATH_PROG(MAKEINDEX,makeindex,/bin/true)
 AC_PATH_PROG(BIBTEX,bibtex,/bin/true)
 
+AC_CONFIG_HEADERS([config.h])
+
 TEA_INIT([3.5])
 TEA_PATH_TCLCONFIG
 TEA_LOAD_TCLCONFIG
@@ -56,7 +58,7 @@ TEA_ENABLE_THREADS
 TEA_ENABLE_SHARED
 TEA_CONFIG_CFLAGS
 TEA_ENABLE_SYMBOLS
-AC_DEFINE(USE_TCL_STUBS)
+AC_DEFINE([USE_TCL_STUBS],[1],[Use the Tcl Stubs library])
 OPENSSL="1"
 
 TLS_CHECK_SSL
@@ -68,7 +70,7 @@ TLS_CHECK_SSL
 AC_ARG_ENABLE(patents, [  --enable-patents        Use patented code.  Default is enabled], PATENTS=${enableval}, PATENTS=yes)  
 
 if test ${PATENTS} = no; then
-    AC_DEFINE([NO_PATENTS])
+    AC_DEFINE([NO_PATENTS],[1],[Don't use patented code.])
 fi
 
 TEA_MAKE_LIB
@@ -83,6 +85,7 @@ else
 fi
 
 TEA_PROG_TCLSH
+
 
 dnl SWIG Check
 AX_PKG_SWIG(1.3)

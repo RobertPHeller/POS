@@ -1,3 +1,6 @@
+
+
+
 #------------------------------------------------------------------------
 # TLS_SSL_DIR --
 #
@@ -37,12 +40,12 @@ AC_DEFUN(TLS_CHECK_SSL, [
     #--------------------------------------------------------------------
     if test -n "${OPENSSL}"; then
 	SSL_DIR='/usr /usr/local'
-	AC_DEFINE(NO_IDEA)
-	AC_DEFINE(NO_RC5)
+	AC_DEFINE(NO_IDEA,[1],[No IDEA crypto])
+	AC_DEFINE(NO_RC5,[1],[No RC5 crypto])
     else
 	SSL_DIR='/usr/sslc /usr/local/sslc'
-	AC_DEFINE(BSAFE)
-	AC_DEFINE(FLAT_INC)
+	AC_DEFINE(BSAFE,[1],[BSafe])
+	AC_DEFINE(FLAT_INC,[1],[FLAT_INC])
     fi
     
     AC_MSG_CHECKING([for SSL directory])
