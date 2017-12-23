@@ -7,8 +7,8 @@
 #  Date          : $Date$
 #  Author        : $Author$
 #  Created By    : Robert Heller
-#  Created       : Sat Dec 23 10:45:33 2017
-#  Last Modified : <171223.1053>
+#  Created       : Sat Dec 23 10:26:40 2017
+#  Last Modified : <171223.1054>
 #
 #  Description	
 #
@@ -42,19 +42,8 @@
 #
 ##############################################################################
 
+ACLOCAL_AMFLAGS = -I m4
 
-EXTRA_DIST=tclkit-linux-x86 tclkit-linux-x86_64 \
-	Tclxml3.1-Linux32.zip Tclxml3.1-Linux64.zip
-           
-BUILT_SOURCES = tclkit${BEXEEXT}
 
-noinst_SCRIPTS = tclkit${BEXEEXT}
-
-EXTRA_SCRIPTS = tclkit-linux-x86 tclkit-linux-x86_64 
-
-tclkit${BEXEEXT}: $(TCLKITBSRC) $(top_builddir)/config.status
-	cp $(srcdir)/$(TCLKITBSRC) ./tclkit${BEXEEXT}
-        
-FORCE:
-
+SUBDIRS = BuildData BuildScripts Doc Scripts SwipeHID tls1.6.7
 
