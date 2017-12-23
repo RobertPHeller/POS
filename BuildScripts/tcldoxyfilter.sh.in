@@ -1,0 +1,2 @@
+#!/bin/sh
+@top_builddir@/BuildData/tclkit @top_srcdir@/BuildScripts/tcl2dox.kit $*
