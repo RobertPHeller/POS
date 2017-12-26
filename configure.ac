@@ -92,11 +92,11 @@ AX_PKG_SWIG(1.3)
 
 dnl Check for external Tcl/Tk libraries
 AX_SNIT
-#AX_JSON
+AX_JSON
 #AX_SHA1
 #AX_MD5
-#AX_BASE64
-#AX_URI
+AX_BASE64
+AX_URI
 
 AC_PATH_PROGS(UNZIP,unzip)
 
@@ -106,16 +106,18 @@ case $target_cpu in
     x86_64)
         AC_SUBST(TCLKITRUN, tclkit-linux-x86_64)
         AC_SUBST(TCLXML_ZIP, Tclxml3.1-Linux64.zip)
+        AC_SUBST(IMG_ZIP, Img-1.4-Linux64.zip)
         ;;
     i*86)
         AC_SUBST(TCLKITRUN, tclkit-linux-x86)
         AC_SUBST(TCLXML_ZIP, Tclxml3.1-Linux32.zip)
+        AC_SUBST(IMG_ZIP, Img-1.4-Linux32.zip)
         ;;
     *)
         AC_MSG_ERROR([Unsupported Linux arch: $target_cpu])
         ;;
 esac
-AC_MSG_RESULT([TCLXML_ZIP is $TCLXML_ZIP and TCLKITRUN is $TCLKITRUN])
+AC_MSG_RESULT([TCLXML_ZIP is $TCLXML_ZIP, IMG_ZIP is $IMG_ZIP, and TCLKITRUN is $TCLKITRUN])
 
 
                                         
@@ -141,4 +143,7 @@ AC_CONFIG_FILES([Scripts/Makefile BuildData/Makefile Doc/Makefile \
           BuildScripts/tcldoxyfilter.sh Makefile])
                     
 AC_CONFIG_SUBDIRS([tls1.6.7])
+
+AC_CONFIG_COMMANDS([default],[chmod +x BuildScripts/tcldoxyfilter.sh])
+AC_OUTPUT
 

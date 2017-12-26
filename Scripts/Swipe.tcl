@@ -1,4 +1,4 @@
-##-*- makefile -*-############################################################
+#*****************************************************************************
 #
 #  System        : 
 #  Module        : 
@@ -7,8 +7,8 @@
 #  Date          : $Date$
 #  Author        : $Author$
 #  Created By    : Robert Heller
-#  Created       : Sat Dec 23 10:45:33 2017
-#  Last Modified : <171223.1259>
+#  Created       : Tue Dec 26 12:07:26 2017
+#  Last Modified : <171226.1210>
 #
 #  Description	
 #
@@ -16,9 +16,7 @@
 #
 #  History
 #	
-#  $Log$
-#
-##############################################################################
+#*****************************************************************************
 #
 #    Copyright (C) 2017  Robert Heller D/B/A Deepwoods Software
 #			51 Locke Hill Road
@@ -40,22 +38,23 @@
 #
 # 
 #
-##############################################################################
+#*****************************************************************************
 
+package require snit
+package require paypalAPI
+#package require swipehid
 
-EXTRA_DIST=tclkit-linux-x86 tclkit-linux-x86_64 \
-	Tclxml3.1-Linux32.zip Tclxml3.1-Linux64.zip \
-	Img-1.4-Linux32.zip Img-1.4-Linux64.zip
-           
-BUILT_SOURCES = tclkit${BEXEEXT}
-
-noinst_SCRIPTS = tclkit${BEXEEXT}
-
-EXTRA_SCRIPTS = tclkit-linux-x86 tclkit-linux-x86_64 
-
-tclkit${BEXEEXT}: $(TCLKITBSRC) $(top_builddir)/config.status
-	cp $(srcdir)/$(TCLKITBSRC) ./tclkit${BEXEEXT}
-        
-FORCE:
-
-
+namespace eval Swipe {
+    proc SwipeCard {} {
+        return [::PayPalObjects::CreditCard create %AUTO% \
+                -number "1234567890123456" \
+                -type "VISA" \
+                -expiremonth 1 \
+                -expireyear 1900 \
+                -cvv2 999 \
+                -firstname "John" \
+                -lastname  "Doe"]
+    }
+}
+    
+package provide swipeAPI 1.0

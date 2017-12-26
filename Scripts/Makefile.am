@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Sat Dec 23 11:01:40 2017
-#  Last Modified : <171223.1101>
+#  Last Modified : <171226.1210>
 #
 #  Description	
 #
@@ -42,4 +42,14 @@
 #
 ##############################################################################
 
+
+EXTRA_DIST = POS.tcl IconsAndImages.tcl mainwindow.tcl panedw.tcl ParseXML.tcl \
+	     ReadConfiguration.tcl snitbuttonbox.tcl snitdialog.tcl \
+	     snitHTMLHelp.tcl snitLFs.tcl snitlistbox.tcl snitmainframe.tcl \
+	     snitpagesmanager.tcl snitrotext.tcl snitscrollableframe.tcl \
+	     snitscrollw.tcl snitStdMenuBar.tcl splash.tcl close.gif \
+	     DeepwoodsBanner.gif new.gif open.gif print.gif save.gif \
+	     openfold.png palette.png gray50.xbm info.xbm questhead.xbm \
+	     unknown.xpm gettext.tcl DynamicHelp.tcl ParseXML.tcl \
+	     ReadConfiguration.tcl Paypal.tcl Swipe.tcl
 
