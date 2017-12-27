@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Sat Dec 23 10:26:40 2017
-#  Last Modified : <171226.1211>
+#  Last Modified : <171226.1416>
 #
 #  Description	
 #
@@ -74,7 +74,8 @@ POSScripts = Scripts/IconsAndImages.tcl Scripts/mainwindow.tcl \
 	     Scripts/gray50.xbm Scripts/info.xbm Scripts/questhead.xbm \
 	     Scripts/unknown.xpm Scripts/gettext.tcl Scripts/DynamicHelp.tcl \
 	     Scripts/ParseXML.tcl Scripts/ReadConfiguration.tcl \
-	     Scripts/Paypal.tcl Scripts/Swipe.tcl
+	     Scripts/Paypal.tcl Scripts/Swipe.tcl Scripts/receiptPrinter.tcl \
+	     Scripts/largeHeader.png
 
 POS$(EXEEXT) : Scripts/POS.tcl $(POSScripts) \
 		tls1.6.7/libtls1.6.7.so tls1.6.7/pkgIndex.tcl
@@ -97,6 +98,7 @@ POS$(EXEEXT) : Scripts/POS.tcl $(POSScripts) \
 		tls1.6.7/libtls1.6.7.so tls1.6.7/pkgIndex.tcl tls1.6.7/tls.tcl
 	$(UNZIP) -qq -d POS.vfs/lib $(top_srcdir)/BuildData/$(TCLXML_ZIP)
 	$(UNZIP) -qq -d POS.vfs/lib $(top_srcdir)/BuildData/$(IMG_ZIP)
+	$(UNZIP) -qq -d POS.vfs/lib $(top_srcdir)/BuildData/pdf4tcl05.zip
 	$(TCLKIT) $(top_srcdir)/BuildScripts/AddKitFile.kit -srcdir $(srcdir) \
 	                POS lib/Common $(POSScripts)
 	$(TCLKIT) $(top_srcdir)/BuildScripts/MakePkgIndex.kit \

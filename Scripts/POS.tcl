@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Sat Dec 23 12:19:53 2017
-#  Last Modified : <171226.1210>
+#  Last Modified : <171226.2029>
 #
 #  Description	
 #
@@ -54,6 +54,7 @@ package require ParseXML
 package require ReadConfiguration
 package require paypalAPI
 package require swipeAPI
+package require receiptPrinter
 
 snit::enum SaleMode -values {cash card}
 snit::type Product {
@@ -177,7 +178,7 @@ snit::type Product {
             set rb [ttk::radiobutton $_saleMode.$rbVal \
                     -text [string totitle $rbVal] -value $rbVal \
                     -variable [mytypevar saleMode]]
-            pack $rb -side left
+            pack $rb -side left -expand yes -fill x
         }
         set checkOutButton [ttk::button $AddFrame.checkOutButton \
                             -text "Checkout" \
@@ -204,7 +205,7 @@ snit::type Product {
         ttk::label $SalesCart.descr$indexcount -text $newProdName -anchor w
         grid $SalesCart.descr$indexcount -row $row -column 2 -sticky news
         set price [$type PriceOfProduct $newProdName]
-        ttk::label $SalesCart.price$indexcount -text  [format {$%4.2f} $price]  -anchor e
+        ttk::label $SalesCart.price$indexcount -text  [format {$%5.2f} $price]  -anchor e
         grid  $SalesCart.price$indexcount -row $row -column 3 -sticky news
         set extend [expr {$price * $newProdQnt}]
         ttk::label $SalesCart.extend$indexcount -text  [format {$%6.2f} $extend] \
@@ -276,7 +277,18 @@ snit::type Product {
                      -payer $payer \
                      -transactions [list $trans] \
                      ]
-        puts stderr "*** $type _Checkout: [$payment JSon]"
+        switch $saleMode {
+            cash {
+                $payment configure -id [clock format [clock scan now] -format {CASH-%Y%m%d%H%M%S}]
+                $payment configure -createtime [clock format [clock scan now] -format {%Y-%m-%dT%H:%M:%SZ} -gmt yes]
+            }
+            card {
+                $payment configure -id [clock format [clock scan now] -format {CARD-%Y%m%d%H%M%S}]
+                $payment configure -createtime [clock format [clock scan now] -format {%Y-%m-%dT%H:%M:%SZ} -gmt yes]
+            }
+        }
+        #puts stderr "*** $type _Checkout: [$payment JSon]"
+        ReceiptPrinter printReceipt $payment
     }
 }
 

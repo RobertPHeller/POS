@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Sat Dec 23 11:01:40 2017
-#  Last Modified : <171226.1210>
+#  Last Modified : <171226.1417>
 #
 #  Description	
 #
@@ -51,5 +51,6 @@ EXTRA_DIST = POS.tcl IconsAndImages.tcl mainwindow.tcl panedw.tcl ParseXML.tcl \
 	     DeepwoodsBanner.gif new.gif open.gif print.gif save.gif \
 	     openfold.png palette.png gray50.xbm info.xbm questhead.xbm \
 	     unknown.xpm gettext.tcl DynamicHelp.tcl ParseXML.tcl \
-	     ReadConfiguration.tcl Paypal.tcl Swipe.tcl
+	     ReadConfiguration.tcl Paypal.tcl Swipe.tcl receiptPrinter.tcl \
+	     largeHeader.png
 

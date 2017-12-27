@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Sat Dec 23 20:50:14 2017
-#  Last Modified : <171226.0908>
+#  Last Modified : <171226.1647>
 #
 #  Description	
 #
@@ -100,7 +100,8 @@ namespace eval PayPalObjects {
             }
         }
     }
-    snit::macro ::PayPalObjects::JSonType {} {
+    snit::macro ::PayPalObjects::JSonType {{listElements {}}} {
+        typevariable _listElements $listElements
         method JSon {} {
             set result [format {%c} 123];# open brace
             set comma ""
@@ -118,7 +119,7 @@ namespace eval PayPalObjects {
                     }
                     set comma ","
                     append result "[::PayPalObjects::String2JSon $jsonname]: "
-                    if {[catch {$value JSon} jsopt]} {
+                    if {$jsonname in $_listElements || [catch {$value JSon} jsopt]} {
                         if {[catch {snit::listtype validate $value}]} {
                             append result [::PayPalObjects::String2JSon $value]
                         } elseif {[catch {[lindex $value 0] JSon}]} {
@@ -179,7 +180,7 @@ namespace eval PayPalObjects {
     snit::listtype LinksList -type ::PayPalObjects::Links
     snit::type CreditCard {
         ::PayPalObjects::validationOrNull
-        ::PayPalObjects::JSonType
+        ::PayPalObjects::JSonType {links}
         option -id
         option -number
         option -type
@@ -223,7 +224,7 @@ namespace eval PayPalObjects {
     }
     snit::type PaymentCard {
         ::PayPalObjects::validationOrNull
-        ::PayPalObjects::JSonType
+        ::PayPalObjects::JSonType {links}
         option -id
         option -number
         option -type
@@ -444,7 +445,7 @@ namespace eval PayPalObjects {
     }
     snit::type Payer {
         ::PayPalObjects::validationOrNull
-        ::PayPalObjects::JSonType
+        ::PayPalObjects::JSonType {fundingInstruments}
         option {-paymentmethod paymentMethod PaymentMethod}
         option -status
         option {-accounttype accountType AccountType}
@@ -497,7 +498,7 @@ namespace eval PayPalObjects {
     }
     snit::type Sale {
         ::PayPalObjects::validationOrNull
-        ::PayPalObjects::JSonType
+        ::PayPalObjects::JSonType {links}
         option {-id id Id}
         option {-purchaseunitreferenceid purchaseUnitReferenceId PurchaseUnitReferenceId}
         option {-amount amount Amount}
@@ -525,7 +526,7 @@ namespace eval PayPalObjects {
     }
     snit::type Authorization {
         ::PayPalObjects::validationOrNull
-        ::PayPalObjects::JSonType
+        ::PayPalObjects::JSonType {links}
         option {-id id Id}
         option {-amount amount Amount}  -type ::PayPalObjects::Amount
         option {-paymentmode paymentMode PaymentMode}
@@ -547,7 +548,7 @@ namespace eval PayPalObjects {
     }
     snit::type Order {
         ::PayPalObjects::validationOrNull
-        ::PayPalObjects::JSonType
+        ::PayPalObjects::JSonType {links}
         option {-id id Id}
         option {-purchaseunitreferenceid purchaseUnitReferenceId PurchaseUnitReferenceId}
         option {-referenceid referenceId ReferenceId}
@@ -569,7 +570,7 @@ namespace eval PayPalObjects {
     }
     snit::type Capture {
         ::PayPalObjects::validationOrNull
-        ::PayPalObjects::JSonType
+        ::PayPalObjects::JSonType {links}
         option {-id id Id}
         option {-amount amount Amount} -type ::PayPalObjects::Amount
         option {-isfinalcapture isFinalCapture IsFinalCapture} -type snit::boolean -default false
@@ -587,7 +588,7 @@ namespace eval PayPalObjects {
     }
     snit::type Refund {
         ::PayPalObjects::validationOrNull
-        ::PayPalObjects::JSonType
+        ::PayPalObjects::JSonType {links}
         option {-id id Id}
         option {-amount amount Amount} -type ::PayPalObjects::Amount
         option {-state state State}
@@ -722,7 +723,7 @@ namespace eval PayPalObjects {
     }
     snit::type ItemList {
         ::PayPalObjects::validationOrNull
-        ::PayPalObjects::JSonType
+        ::PayPalObjects::JSonType {items}
         option {-items items Items} -type ::PayPalObjects::Items
         option {-shippingaddress shippingAddress ShippingAddress} -type ::PayPalObjects::ShippingAddress
         option {-shippingmethod shippingMethod ShippingMethod}
@@ -748,7 +749,7 @@ namespace eval PayPalObjects {
     }
     snit::type Transaction {
         ::PayPalObjects::validation
-        ::PayPalObjects::JSonType
+        ::PayPalObjects::JSonType {relatedResources}
         option {-relatedresources relatedResources RelatedResources} -type ::PayPalObjects::RelatedResourcesList
         option {-purchaseunitreferenceid purchaseUnitReferenceId PurchaseUnitReferenceId}
         option {-referenceid referenceId ReferenceId}
@@ -815,7 +816,7 @@ namespace eval PayPalObjects {
     }
     snit::type Payment {
         ::PayPalObjects::validation
-        ::PayPalObjects::JSonType
+        ::PayPalObjects::JSonType {transactions failedTransactions billingAgreementTokens links}
         option {-id id Id}
         option {-intent intent Intent}
         option {-payer payer Payer} -type ::PayPalObjects::Payer
@@ -882,10 +883,6 @@ snit::type paypalAPI {
         }
     }
     
-    typemethod MakeSale {payer transactions} {
-    }
-    
-                
 }
 
 
