@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Sat Dec 23 12:19:53 2017
-#  Last Modified : <171226.2029>
+#  Last Modified : <171229.1100>
 #
 #  Description	
 #
@@ -48,6 +48,8 @@ package require snit
 
 package require MainWindow
 package require ScrollableFrame
+package require ScrollWindow
+package require ROText
 package require IconImage
 package require LabelFrames
 package require ParseXML
@@ -55,6 +57,9 @@ package require ReadConfiguration
 package require paypalAPI
 package require swipeAPI
 package require receiptPrinter
+package require sqlite3
+package require Dialog
+package require pdf4tcl
 
 snit::enum SaleMode -values {cash card}
 snit::type Product {
@@ -68,6 +73,8 @@ snit::type Product {
     typevariable newProdName
     typevariable newProdQnt
     typevariable saleMode cash
+    typevariable cashOnHand 0
+    typevariable todaysTransactions [list]
     typecomponent productDB
     typevariable AllProducts [list]
     typemethod PriceOfProduct {name} {
@@ -94,13 +101,16 @@ snit::type Product {
     
     typeconstructor {
         wm protocol . WM_DELETE_WINDOW [mytypemethod CareFulExit]
+        set askCashDialog {}
         set ConfigurationBody [list ReadConfiguration::ConfigurationType \
                                [list "Product File" productFile infile products.xml] \
                                [list "Receipt Printer" receiptPrinter string ReceiptPrinter] \
                                [list "Card Swipe Device" cardSwipe string hiddev1] \
                                [list "PayPal URL" paypalURL string https://api.paypal.com] \
                                [list "PayPal ClientID" paypalClientID string ""] \
-                               [list "PayPal Secret" paypalSecret string ""]]
+                               [list "PayPal Secret" paypalSecret string ""] \
+                               [list "Sale Database" "saleDB" outfile sales.sqlite] \
+                               [list "Cash Drawer" cashDrawer outfile cash.txt]]
         snit::type ::Configuration $ConfigurationBody
         ::Configuration load
         catch {
@@ -128,12 +138,13 @@ snit::type Product {
             set price [$price data]
             $type create %AUTO% -name $name -price $price
         }}
+        sqlite3 SaleDB [::Configuration getoption saleDB]
+        $type CreateSalesTables
         set Main [mainwindow .main -countvariable [mytypevar itemcount] \
                   -grandtotalvariable [mytypevar  grandtotalF]]
         pack $Main -fill both -expand yes
         bind all <Control-q> [mytypemethod CareFulExit]
         bind all <Control-Q> [mytypemethod CareFulExit]
-        $Main menu delete file "Close"
         $Main menu entryconfigure file "Exit" -command [mytypemethod CareFulExit]
         $Main menu add options command \
               -label {Edit Configuration} \
@@ -146,8 +157,10 @@ snit::type Product {
         $Main menu add options command \
               -label {Load Configuration} \
               -command {::Configuration load}
-        
-        
+        $Main menu entryconfigure register "Cash Report" -command [mytypemethod CashReport screen]
+        $Main menu entryconfigure register "Cash Out" -command [mytypemethod CashOut]
+        $Main menu entryconfigure register "Add Cash" -command [mytypemethod AddCash]
+        $Main menu entryconfigure register "Withdraw Cash" -command [mytypemethod WithdrawCash]
         set frame [$Main scrollwindow getframe]
         set SalesCart [ScrollableFrame $frame.salesCart]
         $Main scrollwindow setwidget $SalesCart
@@ -165,13 +178,16 @@ snit::type Product {
                      -editable no -textvariable [mytypevar newProdName]]
         pack $newProd -expand yes -fill x
         set newProdName [lindex [$AddFrame.newProdName cget -value] 0]
+        bind all <p> [list focus $newProd]
+        bind all <P> [list focus $newProd]
         set newProdQ [LabelSpinBox $AddFrame.newProdQnt -range {1 99 1} -editable no -textvariable [mytypevar newProdQnt]]
         pack $newProdQ -expand yes -fill x
         set newProdQnt 1
         set newProdAddButton [ttk::button $AddFrame.newProdAdd -text "Add" -command [mytypemethod _AddProduct]]
         pack $newProdAddButton  -expand yes -fill x
+        bind $newProdAddButton <Return> [list $newProdAddButton invoke]
+        $newProd bind <Return> [list $newProdAddButton invoke]
         pack [ttk::separator $AddFrame.s1 -orient horizontal] -expand yes -fill x
-
         set _saleMode [labelframe $AddFrame.saleMode -text "Sale Mode" -labelanchor nw]
         pack $_saleMode -expand yes -fill x
         foreach rbVal [SaleMode cget -values] {
@@ -184,12 +200,180 @@ snit::type Product {
                             -text "Checkout" \
                             -command [mytypemethod _Checkout]]
         pack $checkOutButton -expand yes -fill x
+        bind all <c> [list  $checkOutButton invoke]
+        bind all <C> [list  $checkOutButton invoke]
+        set voidCartButton [ttk::button $AddFrame.voidCardButton \
+                            -text "Void Cart" \
+                            -command [mytypemethod _VoidCart]]
+        pack $voidCartButton -expand yes -fill x
+        bind all <v> [list  $voidCartButton invoke]
+        bind all <V> [list  $voidCartButton invoke]
         $Main slideout show AddFrame
         ::paypalAPI GetAccessToken
         $Main showit
+        if {[catch {open [::Configuration getoption cashDrawer] r} cashFP]} {
+            set cashOnHand [$type askCash]
+        } else {
+            set cashOnHand [gets $cashFP]
+            close $cashFP
+        }
+    }
+    typemethod CashOut {} {
+        if {![catch {open [::Configuration getoption cashDrawer] w} cashFP]} {
+            puts $cashFP $cashOnHand
+            close $cashFP
+        }
+        $type CashReport
+        set todaysTransactions {}
+    }
+    typevariable _cashDrawer 0
+    typemethod buildAskCashDialog {} {
+        if {$askCashDialog ne {} && [winfo exists $askCashDialog]} {
+            return
+        }
+        set askCashDialog [Dialog .askCashDialog -title "Initial cash" \
+                           -modal local -bitmap questhead \
+                           -transient yes -default 0 -cancel 1]
+        $askCashDialog add ok -text {Ok} -command [mytypemethod _askCashOK]
+        $askCashDialog add cancel -text {Cancel} \
+              -command [mytypemethod _askCashCancel]
+        set frame [$askCashDialog getframe]
+        set cashEntry [LabelEntry $frame.cashEntry -label "Cash on hand:" \
+                       -textvariable [mytypevar _cashDrawer]]
+        pack $cashEntry  -expand yes -fill x
+    }
+    typemethod _askCashOK {} {
+        $askCashDialog withdraw
+        $askCashDialog enddialog ok
+    }
+    typemethod _askCashCancel {} {
+        $askCashDialog withdraw
+        $askCashDialog enddialog cancel
+    }
+    typecomponent askAddCashDialog
+    typevariable _addCashAmount 0
+    typemethod buildAskAddCashDialog {} {
+        if {$askAddCashDialog ne {} && [winfo exists $askAddCashDialog]} {
+            return
+        }
+        set askAddCashDialog [Dialog .askAddCashDialog -title "Add Cash" \
+                              -modal local -bitmap questhead \
+                              -transient yes -default 0 -cancel 1]
+        $askAddCashDialog add ok -text {Ok} -command [mytypemethod _askAddCashOK]
+        $askAddCashDialog add cancel -text {Cancel} -command [mytypemethod _askAddCashCancel]
+        set frame [$askAddCashDialog getframe]
+        set addCashEntry [LabelEntry $frame.addCashEntry -label "Add Cash:" \
+                         -textvariable [mytypevar _addCashAmount]]
+        pack $addCashEntry -expand yes -fill x
+    }
+    typemethod _askAddCashOK {} {
+        $askAddCashDialog withdraw
+        $askAddCashDialog enddialog ok
+    }
+    typemethod _askAddCashCancel {} {
+        $askAddCashDialog withdraw
+        $askAddCashDialog enddialog cancel
+    }
+    typemethod AddCash {} {
+        $type buildAskAddCashDialog
+        if {[$askAddCashDialog draw] eq "ok"} {
+            set cashOnHand [expr {$cashOnHand + $_addCashAmount}]
+            set transId [clock format [clock scan now] -format {ADDCASH%Y%m%d%H%M}]
+            set createtime [clock format [clock scan now] -format {%Y-%m-%dT%H:%M:%SZ} -gmt yes]
+            set total $_addCashAmount
+            set subtotal $total
+            set tax 0
+            set sql "INSERT INTO Sale VALUES ("
+            append sql "'$transId',"
+            append sql "'$createtime',"
+            append sql "'cashadd',"
+            append sql "$total,"
+            append sql "$subtotal,"
+            append sql "$tax)"
+            SaleDB eval $sql
+            lappend todaysTransactions $transId
+        }
+    }
+    typecomponent askWithdrawCashDialog
+    typevariable _withdrawCashAmount 0
+    typemethod buildAskWithdrawCashDialog {} {
+        if {$askWithdrawCashDialog ne {} && [winfo exists $askWithdrawCashDialog]} {
+            return
+        }
+        set askWithdrawCashDialog [Dialog .askWithdrawCashDialog -title "Add Cash" \
+                              -modal local -bitmap questhead \
+                              -transient yes -default 0 -cancel 1]
+        $askWithdrawCashDialog add ok -text {Ok} -command [mytypemethod _askWithdrawCashOK]
+        $askWithdrawCashDialog add cancel -text {Cancel} -command [mytypemethod _askWithdrawCashCancel]
+        set frame [$askWithdrawCashDialog getframe]
+        set addCashEntry [LabelEntry $frame.addCashEntry -label "Add Cash:" \
+                         -textvariable [mytypevar _withdrawCashAmount]]
+        pack $addCashEntry -expand yes -fill x
+    }
+    typemethod _askWithdrawCashOK {} {
+        $askWithdrawCashDialog withdraw
+        $askWithdrawCashDialog enddialog ok
+    }
+    typemethod _askWithdrawCashCancel {} {
+        $askWithdrawCashDialog withdraw
+        $askWithdrawCashDialog enddialog cancel
+    }
+    typemethod WithdrawCash {} {
+        $type buildAskWithdrawCashDialog
+        if {[$askWithdrawCashDialog draw] eq "ok"} {
+            set cashOnHand [expr {$cashOnHand - $_withdrawCashAmount}]
+            set transId [clock format [clock scan now] -format {WTHCASH%Y%m%d%H%M}]
+            set createtime [clock format [clock scan now] -format {%Y-%m-%dT%H:%M:%SZ} -gmt yes]
+            set total -$_withdrawCashAmount
+            set subtotal $total
+            set tax 0
+            set sql "INSERT INTO Sale VALUES ("
+            append sql "'$transId',"
+            append sql "'$createtime',"
+            append sql "'cashwth',"
+            append sql "$total,"
+            append sql "$subtotal,"
+            append sql "$tax)"
+            SaleDB eval $sql
+            lappend todaysTransactions $transId
+        }
     }
     typemethod CareFulExit {} {
+        $type CashOut
+        SaleDB close
         ::exit
+    }
+    typecomponent askCashDialog
+    typevariable _cashDrawer 0
+    typemethod buildAskCashDialog {} {
+        if {$askCashDialog ne {} && [winfo exists $askCashDialog]} {
+            return
+        }
+        set askCashDialog [Dialog .askCashDialog -title "Initial cash" \
+                           -modal local -bitmap questhead \
+                           -transient yes -default 0 -cancel 1]
+        $askCashDialog add ok -text {Ok} -command [mytypemethod _askCashOK]
+        $askCashDialog add cancel -text {Cancel} -command [mytypemethod _askCashCancel]
+        set frame [$askCashDialog getframe]
+        set cashEntry [LabelEntry $frame.cashEntry -label "Cash on hand:" \
+                       -textvariable [mytypevar _cashDrawer]]
+        pack $cashEntry  -expand yes -fill x
+    }
+    typemethod _askCashOK {} {
+        $askCashDialog withdraw
+        $askCashDialog enddialog ok
+    }
+    typemethod _askCashCancel {} {
+        $askCashDialog withdraw
+        $askCashDialog enddialog cancel
+    }
+    typemethod askCash {} {
+        $type buildAskCashDialog
+        if {[$askCashDialog draw] eq "ok"} {
+            return $_cashDrawer
+        } else {
+            return 0
+        }
     }
     typemethod _AddProduct {} {
         set row [lindex [grid size $SalesCart] 1]
@@ -283,12 +467,233 @@ snit::type Product {
                 $payment configure -createtime [clock format [clock scan now] -format {%Y-%m-%dT%H:%M:%SZ} -gmt yes]
             }
             card {
+                ## Swipe card and process payment
+                #
                 $payment configure -id [clock format [clock scan now] -format {CARD-%Y%m%d%H%M%S}]
                 $payment configure -createtime [clock format [clock scan now] -format {%Y-%m-%dT%H:%M:%SZ} -gmt yes]
             }
         }
         #puts stderr "*** $type _Checkout: [$payment JSon]"
         ReceiptPrinter printReceipt $payment
+        if {$saleMode eq "cash"} {
+            set cashOnHand [expr {$cashOnHand + $grandtotal}]
+        }
+        tk_messageBox -type ok -message "Checkout complete."
+        ## Add transaction to database
+        $type AddSaleToDB $payment
+        ## Clear out sales cart
+        foreach c [winfo children $SalesCart] {
+            destroy $c
+        }
+        set indexcount 0
+        set itemcount 0
+        set grandtotal 0
+        set grandtotalF [format {$%5.2f} $grandtotal]
+    }
+    typemethod _VoidCart {} {
+        ## Clear out sales cart
+        foreach c [winfo children $SalesCart] {
+            destroy $c
+        }
+        set indexcount 0
+        set itemcount 0
+        set grandtotal 0
+        set grandtotalF [format {$%5.2f} $grandtotal]
+    }
+    typemethod CreateSalesTables {} {
+        SaleDB eval {CREATE TABLE IF NOT EXISTS Sale 
+            (transactionid TEXT NOT NULL UNIQUE PRIMARY KEY,
+             createtime TEXT NOT NULL,
+             paymentmethod TEXT NOT NULL,
+             totalsale REAL NOT NULL,
+             subtotal REAL NOT NULL,
+             tax REAL NOT NULL)}
+        SaleDB eval {CREATE TABLE IF NOT EXISTS Item 
+            (transactionid TEXT NOT NULL,
+             name TEXT NOT NULL,
+             quantity INTEGER NOT NULL,
+             price REAL NOT NULL,
+             tax REAL NOT NULL)}
+    }
+    typemethod AddSaleToDB {payment} {
+        set transId [$payment cget -id]
+        set createtime [$payment cget -createtime]
+        set paymentmethod [[$payment cget -payer] cget -paymentmethod]
+        set trans [lindex [$payment cget -transactions] 0]
+        set amount [$trans cget -amount]
+        set total  [$amount cget -total]
+        set details [$amount cget -details]
+        set subtotal [$details cget -subtotal]
+        set tax     [$details cget -tax]
+        set sql "INSERT INTO Sale VALUES ("
+        append sql "'$transId',"
+        append sql "'$createtime',"
+        append sql "'$paymentmethod',"
+        append sql "$total,"
+        append sql "$subtotal,"
+        append sql "$tax)"
+        SaleDB eval $sql
+        set itemlist [$trans cget -itemlist]
+        foreach item [$itemlist cget -items] {
+            set sql "INSERT INTO Item VALUES ("
+            append sql "'$transId',"
+            append sql "'[quoteQ [$item cget -name]]',"
+            append sql "[$item cget -quantity],"
+            append sql "[$item cget -price],"
+            append sql "[$item cget -tax])"
+            SaleDB eval $sql
+        }
+        lappend todaysTransactions $transId
+    }
+    proc quoteQ {s} {
+        return [regsub -all {'} $s {\'}]
+    }
+    typecomponent reportWindow
+    typecomponent reportText
+    typemethod buildReportWindow {} {
+        if {[info exists reportWindow] && [winfo exists $reportWindow]} {
+            destroy $reportWindow
+            set reportWindow {}
+        }
+        set reportWindow [tk::toplevel .reportWindow]
+        wm transient $reportWindow .
+        set sw [ScrolledWindow $reportWindow.sw -auto vertical -scrollbar vertical]
+        pack $sw -expand yes -fill both
+        set reportText [ROText [$sw getframe].reportText]
+        $sw setwidget $reportText
+        pack [ttk::button $reportWindow.dismis -text "Dismis" \
+              -command [list destroy $reportWindow]] -expand yes -fill x
+    }
+    typemethod CashReport {{format printer}} {
+        set reporttotal      0
+        set reportsubtotal   0
+        set reporttax        0
+        set cashintotal      0
+        set creditintotal    0
+        if {$format in {screen both}} {
+            $type buildReportWindow
+        }
+        if {$format in {printer both}} {
+            set report [pdf4tcl::new %AUTO% -paper letter \
+                    -landscape false \
+                    -orient true \
+                    -margin [list .1i .1i .1i .1i] \
+                    -file "report.pdf" \
+                    ]
+            lassign [$report getDrawableArea] pageWidth pageHeight
+            set pageWidth [expr {$pageWidth - (2*[::pdf4tcl::getPoints .1i])}]
+            set pageHeight [expr {$pageHeight - (2*[::pdf4tcl::getPoints .1i])}]
+            set img [IconImage image largeHeader]
+            set headerId [$report addRawImage [$img data]]
+            set hwidth [image width $img]
+            set hheight [image height $img]
+            set scale [expr {double(double($pageWidth) / $hwidth)}]
+            set imgPrintHeight [expr {$scale * $hheight}]
+            $report putImage $headerId .1i .1i -width $pageWidth
+            set hp [expr {$imgPrintHeight + [::pdf4tcl::getPoints .1i]}]
+            set curp [expr {$hp + [::pdf4tcl::getPoints .2i]}]
+            $report setFont 12 Courier
+            $report setTextPosition .1i $curp
+            $report setLineSpacing 1.2
+            $report setFillColor 0 0 0
+            set lincount [expr {int(floor(($pageHeight - $curp)/(12*1.2))-7)}]
+        }
+        set line [format {%19s %21s %10s %8s %8s %6s} "Transaction" "Date Time" "Mode" "Total" "SubTotal" "Tax"]
+        if {$format in {printer both}} {
+            $report text $line
+            $report newLine
+            incr lincount -1
+            set pageNo 1
+        }
+        if {$format in {screen both}} {
+            $reportText insert end "$line\n"
+            $reportText see end
+        }
+        foreach trans $todaysTransactions {
+            lassign [SaleDB eval \
+                     "SELECT * FROM Sale where transactionid = '$trans'"] \
+                    transId createtime paymentmethod total subtotal tax
+            set reporttotal    [expr {$reporttotal + $total}]
+            set reportsubtotal [expr {$reportsubtotal + $subtotal}]
+            set reporttax      [expr {$reporttax + $tax}]
+            switch $paymentmethod {
+                cash {
+                    set cashintotal [expr {$cashintotal + $total}]
+                }
+                creditcard {
+                    set creditintotal [expr {$creditintotal + $total}]
+                }
+            }
+            set line [format {%19s %21s %10s $%7.2f $%7.2f $%5.2f} $transId $createtime $paymentmethod $total $subtotal $tax]
+            if {$format in {printer both}} {
+                $report text $line
+                $report newLine
+                incr lincount -1
+                if {$lincount < 1} {
+                    $report newLine
+                    set line [format {%40s} "($pageNo)"]
+                    incr pageNo
+                    $report text $line
+                    $report newLine
+                    $report startPage
+                    set curp [::pdf4tcl::getPoints .2i]
+                    $report setTextPosition .1i $curp
+                    set lincount [expr {int(floor(($pageHeight - $curp)/(12*1.2))-7)}]
+                    set line [format {%19s %21s %10s %8s %8s %6s} "Transaction" "Date Time" "Mode" "Total" "SubTotal" "Tax"]
+                    $report text $line
+                    $report newLine
+                    incr lincount -1
+                }
+            }
+            if {$format in {screen both}} {
+                $reportText insert end "$line\n"
+                $reportText see end
+            }
+        }
+        set line [format {%19s %21s %10s $%7.2f $%7.2f $%5.2f} "Total" {} {} $reporttotal $reportsubtotal $reporttax]
+        if {$format in {printer both}} {
+            $report text $line
+            $report newLine
+        }
+        if {$format in {screen both}} {
+            $reportText insert end "$line\n"
+            $reportText see end
+        }
+        set line [format {%19s %21s %10s $%7.2f %8s %6s} "Cash In Total" {} {} $cashintotal {} {}]
+        if {$format in {printer both}} {
+            $report text $line
+            $report newLine
+        }
+        if {$format in {screen both}} {
+            $reportText insert end "$line\n"
+            $reportText see end
+        }
+        set line [format {%19s %21s %10s $%7.2f %8s %6s} "Credit In Total" {} {} $creditintotal {} {}]
+        if {$format in {printer both}} {
+            $report text $line
+            $report newLine
+        }
+        if {$format in {screen both}} {
+            $reportText insert end "$line\n"
+            $reportText see end
+        }
+        set line [format {%19s %21s %10s $%7.2f %8s %6s} "Cash On Hand" {} {} $cashOnHand {} {}]
+        if {$format in {printer both}} {
+            $report text $line
+            $report newLine
+            while {$lincount > 0} {
+                $report newLine
+                incr lincount -1
+            }
+            set line [format {%40s} "($pageNo)"]
+            $report text $line
+            $report newLine
+            $report destroy
+        }
+        if {$format in {screen both}} {
+            $reportText insert end "$line\n"
+            $reportText see end
+        }
     }
 }
 

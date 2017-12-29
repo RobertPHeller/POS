@@ -643,6 +643,7 @@ am__EXEEXT_TRUE
 LTLIBOBJS
 subdirs
 TCLKITBSRC
+SQLITE3_ZIP
 IMG_ZIP
 TCLXML_ZIP
 TCLKITRUN
@@ -12105,6 +12106,8 @@ case $target_cpu in
 
         IMG_ZIP=Img-1.4-Linux64.zip
 
+        SQLITE3_ZIP=sqlite3-Linux64.zip
+
         ;;
     i*86)
         TCLKITRUN=tclkit-linux-x86
@@ -12113,6 +12116,8 @@ case $target_cpu in
 
         IMG_ZIP=Img-1.4-Linux32.zip
 
+        SQLITE3_ZIP=sqlite3-Linux32.zip
+
         ;;
     *)
         { { $as_echo "$as_me:$LINENO: error: Unsupported Linux arch: $target_cpu" >&5
@@ -12120,8 +12125,8 @@ $as_echo "$as_me: error: Unsupported Linux arch: $target_cpu" >&2;}
    { (exit 1); exit 1; }; }
         ;;
 esac
-{ $as_echo "$as_me:$LINENO: result: TCLXML_ZIP is $TCLXML_ZIP, IMG_ZIP is $IMG_ZIP, and TCLKITRUN is $TCLKITRUN" >&5
-$as_echo "TCLXML_ZIP is $TCLXML_ZIP, IMG_ZIP is $IMG_ZIP, and TCLKITRUN is $TCLKITRUN" >&6; }
+{ $as_echo "$as_me:$LINENO: result: TCLXML_ZIP is $TCLXML_ZIP, IMG_ZIP is $IMG_ZIP, SQLITE3_ZIP is $SQLITE3_ZIP, and TCLKITRUN is $TCLKITRUN" >&5
+$as_echo "TCLXML_ZIP is $TCLXML_ZIP, IMG_ZIP is $IMG_ZIP, SQLITE3_ZIP is $SQLITE3_ZIP, and TCLKITRUN is $TCLKITRUN" >&6; }
 
 
 
@@ -12154,7 +12159,6 @@ ac_config_files="$ac_config_files Scripts/Makefile BuildData/Makefile Doc/Makefi
 
 
 subdirs="$subdirs tls1.6.7"
-
 
 ac_config_commands="$ac_config_commands default"
 

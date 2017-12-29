@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Sat Dec 23 10:26:40 2017
-#  Last Modified : <171226.1416>
+#  Last Modified : <171227.2200>
 #
 #  Description	
 #
@@ -99,6 +99,7 @@ POS$(EXEEXT) : Scripts/POS.tcl $(POSScripts) \
 	$(UNZIP) -qq -d POS.vfs/lib $(top_srcdir)/BuildData/$(TCLXML_ZIP)
 	$(UNZIP) -qq -d POS.vfs/lib $(top_srcdir)/BuildData/$(IMG_ZIP)
 	$(UNZIP) -qq -d POS.vfs/lib $(top_srcdir)/BuildData/pdf4tcl05.zip
+	$(UNZIP) -qq -d POS.vfs/lib $(top_srcdir)/BuildData/$(SQLITE3_ZIP)
 	$(TCLKIT) $(top_srcdir)/BuildScripts/AddKitFile.kit -srcdir $(srcdir) \
 	                POS lib/Common $(POSScripts)
 	$(TCLKIT) $(top_srcdir)/BuildScripts/MakePkgIndex.kit \
@@ -107,5 +108,9 @@ POS$(EXEEXT) : Scripts/POS.tcl $(POSScripts) \
 	                POS$(EXEEXT) \
 	          -runtime $(top_srcdir)/BuildData/$(TCLKITRUN)
 	-rm -rf POS.vfs
-	                                        	                                                
+
 		
+tls1.6.7/libtls1.6.7.so tls1.6.7/pkgIndex.tcl : FORCE
+	$(MAKE) -C tls1.6.7
+	
+FORCE:

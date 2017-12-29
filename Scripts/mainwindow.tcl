@@ -86,29 +86,20 @@ snit::widgetadaptor mainwindow {
 	-readonly yes \
 	-default {
 	   "&File" {file:menu} {file} 0 {
-	        {command "&New"     {file:new} ""     {Ctrl n}}
-	        {command "&Open..." {file:open} "" {Ctrl o}}
-	        {command "&Save"    {file:save} "" {Ctrl s}}
-		{command "Save &As..." {file:saveas} "" {Ctrl a}}
-		{command "&Print..." {file:print} "" {Ctrl p}}
-	        {command "&Close" {file:close} "Close the application" {Ctrl c}}
 	        {command "E&xit" {file:exit} "Exit the application" {Ctrl q}}
 	    }
 	    "&Edit" {edit:menu} {edit} 0 {
-		{command "&Undo" {edit:undo} "Undo last change" {Ctrl z}}
-		{command "Cu&t" {edit:cut edit:havesel} "Cut selection to the paste buffer" {Ctrl x} -command {StdMenuBar EditCut}}
-		{command "&Copy" {edit:copy edit:havesel} "Copy selection to the paste buffer" {Ctrl c} -command {StdMenuBar EditCopy}}
-		{command "&Paste" {edit:paste edit:havesel} "Paste in the paste buffer" {Ctrl v} -command {StdMenuBar EditPaste}}
-		{command "C&lear" {edit:clear edit:havesel} "Clear selection" {} -command {StdMenuBar EditClear}}
-		{command "&Delete" {edit:delete edit:havesel} "Delete selection" {Ctrl d}}
-		{separator}
-		{command "Select All" {edit:selectall} "Select everything" {}}
-		{command "De-select All" {edit:deselectall edit:havesel} "Select nothing" {}}
 	    }
 	    "&View" {view:menu} {view} 0 {
 	    }
 	    "&Options" {options:menu} {options} 0 {
 	    }
+            "&Register" {register:menu} {register} 0 {
+                {command "Cash &Report" {register:report} "Cash Report" {Ctrl r}}
+                {command "&Cash Out" {register:cashout} "Cash Out" {Ctrl c}}
+                {command "&Add Cash" {register:addcash} "Add Cash" {Ctrl a}}
+                {command "&Withdraw Cash" {register:withdrawcash} "Withdraw Cash" {Ctrl w}}
+            }
 	    "&Help" {help:menu} {help} 0 {
 		{command "On &Help..." {help:help} "Help on help" {}}
 		{command "On &Keys..." {help:keys} "Help on keyboard accelerators" {}}

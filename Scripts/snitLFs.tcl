@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Wed Jul 10 16:07:16 2013
-#  Last Modified : <140303.1344>
+#  Last Modified : <171227.1337>
 #
 #  Description	
 #
@@ -216,6 +216,8 @@ snit::widget LabelComboBox {
         pack $combobox -side left -fill x -expand yes
         $self configurelist $args
         bind $combobox <<ComboboxSelected>> [mymethod _selected]
+        $hull configure -takefocus 1
+        bind $win <FocusIn> "focus $combobox"
     }
     method bind {sequence script} {
         bind $combobox $sequence $script
