@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Sat Dec 23 11:02:08 2017
-#  Last Modified : <171223.1102>
+#  Last Modified : <180104.1723>
 #
 #  Description	
 #
@@ -43,3 +43,4 @@
 ##############################################################################
 
 
+EXTRA_DIST = hid.c hidapi.h

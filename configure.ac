@@ -115,6 +115,11 @@ case $target_cpu in
         AC_SUBST(IMG_ZIP, Img-1.4-Linux32.zip)
         AC_SUBST(SQLITE3_ZIP, sqlite3-Linux32.zip)
         ;;
+    arm*)
+        AC_SUBST(TCLKITRUN, tclkit-linux-armv7l)
+        AC_SUBST(TCLXML_ZIP, Tclxml3.3-Linuxarmv7l.zip)
+        AC_SUBST(IMG_ZIP, Img-1.4-Linuxarmv7l.zip)
+        AC_SUBST(SQLITE3_ZIP, sqlite3-Linuxarmv7l.zip)
     *)
         AC_MSG_ERROR([Unsupported Linux arch: $target_cpu])
         ;;

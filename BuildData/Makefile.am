@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Sat Dec 23 10:45:33 2017
-#  Last Modified : <171226.1327>
+#  Last Modified : <180104.1722>
 #
 #  Description	
 #
@@ -44,8 +44,11 @@
 
 
 EXTRA_DIST=tclkit-linux-x86 tclkit-linux-x86_64 \
+	tclkit-linux-armv7l \
 	Tclxml3.1-Linux32.zip Tclxml3.1-Linux64.zip \
+	Tclxml3.3-Linuxarmv7l.zip \
 	Img-1.4-Linux32.zip Img-1.4-Linux64.zip \
+	Img-1.4-Linuxarmv7l.zip \
 	pdf4tcl05.zip
            
 BUILT_SOURCES = tclkit${BEXEEXT}
