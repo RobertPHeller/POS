@@ -119,7 +119,7 @@ snit::widgetadaptor mainwindow {
   option {-dontwithdraw dontWithdraw DontWithdraw} -readonly yes -default 0
   option -scrolling -readonly yes -default yes -type snit::boolean
   delegate method {mainframe *} to hull except {getframe addtoobar gettoolbar 
-						showtoolbar}
+      showtoolbar}
   component scrollwindow
   ## @privatesection ScrollWindow component.
   delegate method {scrollwindow *} to scrollwindow
@@ -632,10 +632,10 @@ snit::widgetadaptor mainwindow {
     grid [ttk::label $header.descr -text "Description" -anchor w] -row 0 -column 2 -sticky news
     grid [ttk::label $header.price -text "Unit Price" -anchor e] -row 0 -column 3 -sticky news
     grid [ttk::label $header.extend -text "Extended" -anchor e] -row 0 -column 4 -sticky news
-    grid [ttk::label $header.del -text "" ] -row 0 -column 5 -sticky news
+    grid [ttk::label $header.del -text " "] -row 0 -column 5 -sticky news
     grid columnconfigure $header 0 -minsize 20 -weight 0
     grid columnconfigure $header 1 -minsize 50 -weight 0
-    grid columnconfigure $header 2 -minsize 300 -weight 1
+    grid columnconfigure $header 2 -weight 1;#-minsize 100 
     grid columnconfigure $header 3 -minsize 60 -weight 0
     grid columnconfigure $header 4 -minsize 70 -weight 0
     grid columnconfigure $header 5 -minsize 20 -weight 0
@@ -644,17 +644,17 @@ snit::widgetadaptor mainwindow {
     pack $scrollwindow -fill both -expand yes
     set footer [frame $main.footer]
     pack $footer -expand yes -fill x
-    install itemcount using ttk::entry $footer.count -state readonly -width 4
+    install itemcount using ttk::label $footer.count -anchor w
     grid $itemcount -row 0 -column 0 -sticky news
     grid [ttk::label $footer.fill1 -text ""] -row 0 -column 1 -sticky news
     grid [ttk::label $footer.ltotal -text "Totals:" -anchor e] -row 0 -column 2 -sticky news
     grid [ttk::label $footer.fill2 -text ""] -row 0 -column 3 -sticky news
-    install grandtotal using ttk::entry $footer.total -state readonly -width 8
+    install grandtotal using ttk::label $footer.total -anchor e
     grid $grandtotal -row 0 -column 4 -sticky news
-    grid [ttk::label $footer.del -text "" ] -row 0 -column 5 -sticky news
+    grid [ttk::label $footer.del -text " "] -row 0 -column 5 -sticky news
     grid columnconfigure $footer 0 -minsize 20 -weight 0
     grid columnconfigure $footer 1 -minsize 50 -weight 0
-    grid columnconfigure $footer 2 -minsize 300 -weight 1
+    grid columnconfigure $footer 2 -weight 1;#-minsize 100 
     grid columnconfigure $footer 3 -minsize 60 -weight 0
     grid columnconfigure $footer 4 -minsize 70 -weight 0
     grid columnconfigure $footer 5 -minsize 20 -weight 0

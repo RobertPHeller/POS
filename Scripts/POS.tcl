@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Sat Dec 23 12:19:53 2017
-#  Last Modified : <171229.1100>
+#  Last Modified : <171229.1254>
 #
 #  Description	
 #
@@ -76,6 +76,7 @@ snit::type Product {
     typevariable cashOnHand 0
     typevariable todaysTransactions [list]
     typecomponent productDB
+    typecomponent AddFrame
     typevariable AllProducts [list]
     typemethod PriceOfProduct {name} {
         foreach p $AllProducts {
@@ -166,11 +167,10 @@ snit::type Product {
         $Main scrollwindow setwidget $SalesCart
         grid columnconfigure $SalesCart 0 -minsize 20 -weight 0
         grid columnconfigure $SalesCart 1 -minsize 50 -weight 0
-        grid columnconfigure $SalesCart 2 -minsize 300 -weight 1
+        grid columnconfigure $SalesCart 2 -weight 1;#-minsize 100
         grid columnconfigure $SalesCart 3 -minsize 60 -weight 0
         grid columnconfigure $SalesCart 4 -minsize 70 -weight 0
         grid columnconfigure $SalesCart 5 -minsize 20 -weight 0
-        grid columnconfigure $SalesCart 6 -minsize 20 -weight 0
         set cartFrame [$SalesCart getframe]
         set AddFrame [$Main slideout add AddFrame]
         set newProd [LabelComboBox $AddFrame.newProdName \
@@ -396,9 +396,11 @@ snit::type Product {
               -anchor e
         grid $SalesCart.extend$indexcount -row $row -column 4 -sticky news 
         set grandtotal [expr {$grandtotal + $extend}] 
-        set grandtotalF [format {$%5.2f} $grandtotal]
+        set grandtotalF [format {$%6.2f} $grandtotal]
         ttk::button $SalesCart.del$indexcount -text "x" -width 1 -command [mytypemethod _deleteItem $indexcount]
         grid $SalesCart.del$indexcount -row $row -column 5 -sticky news
+        set newProdQnt 1
+        set newProdName [lindex [$AddFrame.newProdName cget -value] 0]
     }
     typemethod _deleteItem {ic} {
         destroy $SalesCart.count$ic  $SalesCart.qnty$ic $SalesCart.descr$ic \
