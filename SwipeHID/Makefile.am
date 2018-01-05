@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Sat Dec 23 11:02:08 2017
-#  Last Modified : <180105.1532>
+#  Last Modified : <180105.1543>
 #
 #  Description	
 #
@@ -63,6 +63,6 @@ TclSwipeReader_wrap.c : TclSwipeReader.i $(pkginclude_HEADERS) \
 	$(srcdir)/TclSwipeReader.i
                 
 pkgIndex.tcl: libswipereader.la $(top_builddir)/config.status
-	echo 'package ifneeded Swipereader 1.0.0 [list load [file join $$dir libswipereader[info sharedlibextension]]]' > pkgIndex.tcl
+	echo 'package ifneeded Tclswipereader 1.0.0 [list load [file join $$dir libswipereader[info sharedlibextension]]]' > pkgIndex.tcl
 
         
