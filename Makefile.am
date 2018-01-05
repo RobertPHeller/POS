@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Sat Dec 23 10:26:40 2017
-#  Last Modified : <180105.0814>
+#  Last Modified : <180105.1548>
 #
 #  Description	
 #
@@ -79,7 +79,8 @@ POSScripts = Scripts/IconsAndImages.tcl Scripts/mainwindow.tcl \
 	     Scripts/DWSLogo.tcl Scripts/DWSLogo.xbm
 
 POS$(EXEEXT) : Scripts/POS.tcl $(POSScripts) \
-		tls1.6.7/libtls1.6.7.so tls1.6.7/pkgIndex.tcl
+		tls1.6.7/libtls1.6.7.so tls1.6.7/pkgIndex.tcl \
+		SwipeHID/libswipereader.la SwipeHID/pkgIndex.tcl
 	-rm -rf POS.vfs POS.kit
 	$(TCLKIT) $(top_srcdir)/BuildScripts/sdx.kit qwrap \
 		$(srcdir)/Scripts/POS.tcl
@@ -97,6 +98,9 @@ POS$(EXEEXT) : Scripts/POS.tcl $(POSScripts) \
 	$(TCLKIT) $(top_srcdir)/BuildScripts/AddKitFile.kit \
 		-srcdir $(srcdir)/tls1.6.7 POS lib/tls1.6.7 \
 		tls1.6.7/libtls1.6.7.so tls1.6.7/pkgIndex.tcl tls1.6.7/tls.tcl
+	$(TCLKIT) $(top_srcdir)/BuildScripts/AddKitFile.kit \
+		-srcdir $(srcdir)/SwipeHID POS lib/SwipeHID \
+		SwipeHID/.libs/libswipereader.so SwipeHID/pkgIndex.tcl
 	$(UNZIP) -qq -d POS.vfs/lib $(top_srcdir)/BuildData/$(TCLXML_ZIP)
 	$(UNZIP) -qq -d POS.vfs/lib $(top_srcdir)/BuildData/$(IMG_ZIP)
 	$(UNZIP) -qq -d POS.vfs/lib $(top_srcdir)/BuildData/pdf4tcl05.zip
@@ -114,4 +118,7 @@ POS$(EXEEXT) : Scripts/POS.tcl $(POSScripts) \
 tls1.6.7/libtls1.6.7.so tls1.6.7/pkgIndex.tcl : FORCE
 	$(MAKE) -C tls1.6.7
 	
+SwipeHID/libswipereader.la SwipeHID/pkgIndex.tcl : FORCE
+	$(MAKE) -C SwipeHID
+
 FORCE:
