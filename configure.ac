@@ -120,6 +120,7 @@ case $target_cpu in
         AC_SUBST(TCLXML_ZIP, Tclxml3.3-Linuxarmv7l.zip)
         AC_SUBST(IMG_ZIP, Img-1.4-Linuxarmv7l.zip)
         AC_SUBST(SQLITE3_ZIP, sqlite3-Linuxarmv7l.zip)
+        ;;
     *)
         AC_MSG_ERROR([Unsupported Linux arch: $target_cpu])
         ;;
@@ -135,6 +136,9 @@ case $build_cpu in
         ;;
     i*86)
         AC_SUBST(TCLKITBSRC, tclkit-linux-x86)
+        ;;
+    arm*)
+        AC_SUBST(TCLKITBSRC, tclkit-linux-armv7l)
         ;;
     *)
         AC_MSG_ERROR([Unsupported Linux arch: $build_cpu])
