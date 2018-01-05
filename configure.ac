@@ -63,6 +63,8 @@ OPENSSL="1"
 
 TLS_CHECK_SSL
 
+AM_PROG_LIBTOOL
+
 #--------------------------------------------------------------------
 # Determine if we should use the patented encryption code
 #--------------------------------------------------------------------

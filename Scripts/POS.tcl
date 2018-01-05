@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Sat Dec 23 12:19:53 2017
-#  Last Modified : <180105.1300>
+#  Last Modified : <180105.1422>
 #
 #  Description	
 #
@@ -576,7 +576,10 @@ snit::type Product {
         if {$format in {screen both}} {
             $type buildReportWindow
         }
-        ReceiptPrinter $format $todaysTransactions $reportText $cashOnHand
+        if {[catch {ReceiptPrinter printReport $format $todaysTransactions $reportText $cashOnHand} err]} {
+            tk_messageBox -icon warning -type ok -message $err
+            $type CashReport screen
+        }
     }
 }
 

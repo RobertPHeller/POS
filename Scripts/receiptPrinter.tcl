@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Tue Dec 26 13:20:43 2017
-#  Last Modified : <180105.1252>
+#  Last Modified : <180105.1418>
 #
 #  Description	
 #
@@ -61,7 +61,9 @@ snit::type ReceiptPrinter {
         set logo DWSLogo
     }
     typemethod printReceipt {payment {withSig no}} {
-        set printer [POSReceiptPrinter %AUTO% "/dev/RECEIPTS"]
+        if {[catch {set printer [POSReceiptPrinter create %AUTO% "/dev/RECEIPTS"]} err]} {
+            error "Cannot open receipt printer (/dev/RECEIPTS): $err"
+        }
         $printer internationCharSet usa
         $printer setAbsPrintPos 0
         $printer printRasterBitImage [$logo width] [$logo height] [$logo data]
@@ -133,7 +135,9 @@ snit::type ReceiptPrinter {
         set cashintotal      0
         set creditintotal    0
         if {$format in {printer both}} {
-            set printer [POSReceiptPrinter %AUTO% "/dev/RECEIPTS"]
+            if {[catch {set printer [POSReceiptPrinter create %AUTO% "/dev/RECEIPTS"]} err]} {
+                error "Cannot open receipt printer (/dev/RECEIPTS): $err"
+            }
             $printer internationCharSet usa
             $printer setAbsPrintPos 0
             $printer printRasterBitImage [$logo width] [$logo height] [$logo data]
