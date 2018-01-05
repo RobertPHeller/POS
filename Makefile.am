@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Sat Dec 23 10:26:40 2017
-#  Last Modified : <171227.2200>
+#  Last Modified : <180104.2224>
 #
 #  Description	
 #
@@ -75,7 +75,7 @@ POSScripts = Scripts/IconsAndImages.tcl Scripts/mainwindow.tcl \
 	     Scripts/unknown.xpm Scripts/gettext.tcl Scripts/DynamicHelp.tcl \
 	     Scripts/ParseXML.tcl Scripts/ReadConfiguration.tcl \
 	     Scripts/Paypal.tcl Scripts/Swipe.tcl Scripts/receiptPrinter.tcl \
-	     Scripts/largeHeader.png
+	     Scripts/largeHeader.png Scripts/SnitReceiptPrinter.tcl
 
 POS$(EXEEXT) : Scripts/POS.tcl $(POSScripts) \
 		tls1.6.7/libtls1.6.7.so tls1.6.7/pkgIndex.tcl
