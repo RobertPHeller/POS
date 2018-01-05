@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Thu Jan 4 19:47:45 2018
-#  Last Modified : <180104.2059>
+#  Last Modified : <180105.1258>
 #
 #  Description	
 #
@@ -45,12 +45,8 @@ package require snit
 package require Tk
 
 snit::type POSReceiptPrinter {
-    typevariable printerInitializeCommand {0x1b 0x40}
-    typevariable cashDrawerEject_1 {0x1b 0x70 0 0x40 0x50}
-    typevariable cashDrawerEject_2 {0x1b 0x70 1 0x40 0x50}
-    typevariable rasterModeStartCommand {0x1d 0x76 0x30 0}
         
-    component deviceChan
+    variable deviceChan
     constructor {deviceName args} {
         if {[catch {open $deviceName w} deviceChan]} {
             set errorMessage "Could not open $deviceName: $deviceChan"
@@ -58,67 +54,180 @@ snit::type POSReceiptPrinter {
             error $errorMessage
         }
         #$self configurelist $args
-        $self outputCommand $printerInitializeCommand
+        $self _initializePrinter
     }
     destructor {
-        $self outputCommand $printerInitializeCommand
+        $self _initializePrinter
         close $deviceChan
+    }
+    method _xputchar {c} {
+        puts -nonewline $deviceChan "[format %c $c]"
+    }
+    method _putchar {char} {
+        puts -nonewline $deviceChan "$char"
     }
     method textLine {text} {
         puts $deviceChan $text
     }
-    proc onebytepixels {imageArray} {
-        set result [list]
-        foreach row $imageArray {
-            set rowresult [list]
-            foreach pixel $row {
-                if {[regexp {#[[:xdigit:]]{6}} $pixel] > 0} {
-                    scan $pixel {#%2x%2x%2x} red green blue
-                    lappend rowresult [expr {($red+$green+$blue)/3}]
-                } elseif {[regexp {#[[:xdigit:]]{2}} $pixel] > 0} {
-                    scan $pixel {#%2x} gray
-                    lappend rowresult $gray
-                }
-            }
-            lappend result $rowresult
-        }
-        return $result
+    method printMode {modebyte} {
+        $self _xputchar 0x1b
+        $self _putchar "!"
+        $self _xputchar $modebyte
     }
-                
-    method imageBlock {image} {
-        set data [onebytepixels [$image data -grayscale]]
+    method setAbsPrintPos {xpos} {
+        $self _xputchar 0x1b
+        $self _putchar {$}
+        $self _xputchar [expr {$xpos & 0x0ff}]
+        $self _xputchar [expr {($xpos >> 8) & 0x0ff}]
     }
-    method putchar {c} {
-        puts -nonewline $deviceChan "[format %c $c]"
+    method underlineOnThin {} {
+        $self _xputchar 0x1b
+        $self _putchar "-"
+        $self _xputchar 1
     }
-    method outputarray {array} {
-        foreach byte $array {
-            $self putchar $byte
-        }
+    method underlineOnThick {} {
+        $self _xputchar 0x1b
+        $self _putchar "-"
+        $self _xputchar 2
     }
-    method outputCommand {command} {
-        $self outputarray $command
+    method underlineOff {} {
+        $self _xputchar 0x1b
+        $self _putchar "-"
+        $self _xputchar 0
     }
-    proc lo {val} {
-        return [expr {$val & 0x0FF}]
+    method defaultLineSpacing {} {
+        $self _xputchar 0x1b
+        $self _putchar "2"
     }
-    proc hi  {val} {
-        return [expr {($val >> 8) & 0x0FF}]
+    method lineSpacing {spacing} {
+        $self _xputchar 0x1b
+        $self _putchar "3"
+        $self _xputchar $spacing
     }
-    method rasterheader {xsize ysize} {
-        $self outputCommand $rasterModeStartCommand
-        $self putchar [lo $xsize]
-        $self putchar [hi $xsize]
-        $self putchar [lo $ysize]
-        $self putchar [hi $ysize]
+    method _initializePrinter {} {
+        $self _xputchar 0x1b
+        $self _putchar "@"
     }
-    method skiplines {size} {
-        $self putchar 0x1b
-        $self putchar 0x4a
-        $self putchar size
+    method _setTabs {tabs} {
+        $self _xputchar 0x1b
+        $self _putchar "D"
+        foreach t $tabs {$self _xputchar $t}
+        $self _xputchar 0
     }
-    method EndPage {} {
-        skiplines 0x18
+    method _emphasizedOn {} {
+        $self _xputchar 0x1b
+        $self _putchar "E"
+        $self _xputchar 1
+    }
+    method _emphasizedOff {} {
+        $self _xputchar 0x1b
+        $self _putchar "E"
+        $self _xputchar 0
+    }
+    method _doubleStrikeOn {} {
+        $self _xputchar 0x1b
+        $self _putchar "G"
+        $self _xputchar 1
+    }
+    method _doubleStrikeOff {} {
+        $self _xputchar 0x1b
+        $self _putchar "G"
+        $self _xputchar 0
+    }
+    method printAndFeed {space} {
+        $self _xputchar 0x1b
+        $self _putchar "J"
+        $self _xputchar $space
+    }
+    method selectFontA {} {
+        $self _xputchar 0x1b
+        $self _putchar "M"
+        $self _xputchar 0
+    }
+    method selectFontB {} {
+        $self _xputchar 0x1b
+        $self _putchar "M"
+        $self _xputchar 1
+    }
+    method internationCharSet {set} {
+        set indx [lsearch {usa france germany uk denmarki sweden italy spaini japan norway denmarkii spainii latinamerica} [string tolower $set]]
+        if {$indx < 0} {set indx 0}
+        $self _xputchar 0x1b
+        $self _putchar "R"
+        $self _xputchar $indx
+    }
+    method setRelPrintPos {xpos} {
+        $self _xputchar 0x1b
+        $self _putchar "\\"
+        $self _xputchar [expr {$xpos & 0x0ff}]
+        $self _xputchar [expr {($xpos >> 8) & 0x0ff}]
+    }
+    method selectLeftJustification {} {
+        $self _xputchar 0x1b
+        $self _putchar "a"
+        $self _xputchar 0
+    }
+    method selectCenterJustification {} {
+        $self _xputchar 0x1b
+        $self _putchar "a"
+        $self _xputchar 1
+    }
+    method selectRightJustification {} {
+        $self _xputchar 0x1b
+        $self _putchar "a"
+        $self _xputchar 2
+    }
+    method feed {lines} {
+        $self _xputchar 0x1b
+        $self _putchar "d"
+        $self _xputchar $lines
+    }
+    method selectCharacterCodeTable {{tab 0}} {
+        $self _xputchar 0x1b 
+        $self _putchar "t"
+        $self _xputchar $tab
+    }
+    method refersePrintingOn {} {
+        $self _xputchar 0x1d
+        $self _putchar "B"
+        $self _xputchar 1
+    }
+    method refersePrintingOff {} {
+        $self _xputchar 0x1d
+        $self _putchar "B"
+        $self _xputchar 0
+    }
+    method setLeftMargin {xpos} {
+        $self _xputchar 0x1d
+        $self _putchar "L"
+        $self _xputchar [expr {$xpos & 0x0ff}]
+        $self _xputchar [expr {($xpos >> 8) & 0x0ff}]
+    }
+    method setUnits {xunit yunit} {
+        $self _xputchar 0x1d
+        $self _putchar "P"
+        $self _xputchar $xunit
+        $self _xputchar $yunit
+    }
+    method setPrintWidth {width} {
+        $self _xputchar 0x1d
+        $self _putchar "W"
+        $self _xputchar [expr {$width & 0x0ff}]
+        $self _xputchar [expr {($width >> 8) & 0x0ff}]
+    }
+    method printRasterBitImage {width height data {mode 0}} {
+        $self _xputchar 0x1d
+        $self _putchar "v"
+        $self _putchar "0"
+        $self _xputchar $mode
+        set bytewidth [expr {($width + 7) >> 3}]
+        $self _xputchar [expr {$bytewidth & 0x0ff}]
+        $self _xputchar [expr {($bytewidth >> 8) & 0x0ff}] 
+        $self _xputchar [expr {$height & 0x0ff}]
+        $self _xputchar [expr {($height >> 8) & 0x0ff}]
+        foreach b $data {$self _xputchar $b}
     }
 }
 
+
+package provide ReceiptPrinter 1.0

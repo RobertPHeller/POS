@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Sat Dec 23 12:19:53 2017
-#  Last Modified : <171229.1254>
+#  Last Modified : <180105.1300>
 #
 #  Description	
 #
@@ -209,7 +209,7 @@ snit::type Product {
         bind all <v> [list  $voidCartButton invoke]
         bind all <V> [list  $voidCartButton invoke]
         $Main slideout show AddFrame
-        ::paypalAPI GetAccessToken
+        #::paypalAPI GetAccessToken
         $Main showit
         if {[catch {open [::Configuration getoption cashDrawer] r} cashFP]} {
             set cashOnHand [$type askCash]
@@ -476,7 +476,13 @@ snit::type Product {
             }
         }
         #puts stderr "*** $type _Checkout: [$payment JSon]"
-        ReceiptPrinter printReceipt $payment
+        if {saleMode ne "cash"} {
+            ReceiptPrinter printReceipt $payment yes
+            tk_messageBox -icon info -type ok -message "Get Signature"
+        }
+        if {[tk_messageBox -icon question -type yesno -message "Print receipt?"] eq "yes"} {
+            ReceiptPrinter printReceipt $payment
+        }
         if {$saleMode eq "cash"} {
             set cashOnHand [expr {$cashOnHand + $grandtotal}]
         }
@@ -567,135 +573,10 @@ snit::type Product {
               -command [list destroy $reportWindow]] -expand yes -fill x
     }
     typemethod CashReport {{format printer}} {
-        set reporttotal      0
-        set reportsubtotal   0
-        set reporttax        0
-        set cashintotal      0
-        set creditintotal    0
         if {$format in {screen both}} {
             $type buildReportWindow
         }
-        if {$format in {printer both}} {
-            set report [pdf4tcl::new %AUTO% -paper letter \
-                    -landscape false \
-                    -orient true \
-                    -margin [list .1i .1i .1i .1i] \
-                    -file "report.pdf" \
-                    ]
-            lassign [$report getDrawableArea] pageWidth pageHeight
-            set pageWidth [expr {$pageWidth - (2*[::pdf4tcl::getPoints .1i])}]
-            set pageHeight [expr {$pageHeight - (2*[::pdf4tcl::getPoints .1i])}]
-            set img [IconImage image largeHeader]
-            set headerId [$report addRawImage [$img data]]
-            set hwidth [image width $img]
-            set hheight [image height $img]
-            set scale [expr {double(double($pageWidth) / $hwidth)}]
-            set imgPrintHeight [expr {$scale * $hheight}]
-            $report putImage $headerId .1i .1i -width $pageWidth
-            set hp [expr {$imgPrintHeight + [::pdf4tcl::getPoints .1i]}]
-            set curp [expr {$hp + [::pdf4tcl::getPoints .2i]}]
-            $report setFont 12 Courier
-            $report setTextPosition .1i $curp
-            $report setLineSpacing 1.2
-            $report setFillColor 0 0 0
-            set lincount [expr {int(floor(($pageHeight - $curp)/(12*1.2))-7)}]
-        }
-        set line [format {%19s %21s %10s %8s %8s %6s} "Transaction" "Date Time" "Mode" "Total" "SubTotal" "Tax"]
-        if {$format in {printer both}} {
-            $report text $line
-            $report newLine
-            incr lincount -1
-            set pageNo 1
-        }
-        if {$format in {screen both}} {
-            $reportText insert end "$line\n"
-            $reportText see end
-        }
-        foreach trans $todaysTransactions {
-            lassign [SaleDB eval \
-                     "SELECT * FROM Sale where transactionid = '$trans'"] \
-                    transId createtime paymentmethod total subtotal tax
-            set reporttotal    [expr {$reporttotal + $total}]
-            set reportsubtotal [expr {$reportsubtotal + $subtotal}]
-            set reporttax      [expr {$reporttax + $tax}]
-            switch $paymentmethod {
-                cash {
-                    set cashintotal [expr {$cashintotal + $total}]
-                }
-                creditcard {
-                    set creditintotal [expr {$creditintotal + $total}]
-                }
-            }
-            set line [format {%19s %21s %10s $%7.2f $%7.2f $%5.2f} $transId $createtime $paymentmethod $total $subtotal $tax]
-            if {$format in {printer both}} {
-                $report text $line
-                $report newLine
-                incr lincount -1
-                if {$lincount < 1} {
-                    $report newLine
-                    set line [format {%40s} "($pageNo)"]
-                    incr pageNo
-                    $report text $line
-                    $report newLine
-                    $report startPage
-                    set curp [::pdf4tcl::getPoints .2i]
-                    $report setTextPosition .1i $curp
-                    set lincount [expr {int(floor(($pageHeight - $curp)/(12*1.2))-7)}]
-                    set line [format {%19s %21s %10s %8s %8s %6s} "Transaction" "Date Time" "Mode" "Total" "SubTotal" "Tax"]
-                    $report text $line
-                    $report newLine
-                    incr lincount -1
-                }
-            }
-            if {$format in {screen both}} {
-                $reportText insert end "$line\n"
-                $reportText see end
-            }
-        }
-        set line [format {%19s %21s %10s $%7.2f $%7.2f $%5.2f} "Total" {} {} $reporttotal $reportsubtotal $reporttax]
-        if {$format in {printer both}} {
-            $report text $line
-            $report newLine
-        }
-        if {$format in {screen both}} {
-            $reportText insert end "$line\n"
-            $reportText see end
-        }
-        set line [format {%19s %21s %10s $%7.2f %8s %6s} "Cash In Total" {} {} $cashintotal {} {}]
-        if {$format in {printer both}} {
-            $report text $line
-            $report newLine
-        }
-        if {$format in {screen both}} {
-            $reportText insert end "$line\n"
-            $reportText see end
-        }
-        set line [format {%19s %21s %10s $%7.2f %8s %6s} "Credit In Total" {} {} $creditintotal {} {}]
-        if {$format in {printer both}} {
-            $report text $line
-            $report newLine
-        }
-        if {$format in {screen both}} {
-            $reportText insert end "$line\n"
-            $reportText see end
-        }
-        set line [format {%19s %21s %10s $%7.2f %8s %6s} "Cash On Hand" {} {} $cashOnHand {} {}]
-        if {$format in {printer both}} {
-            $report text $line
-            $report newLine
-            while {$lincount > 0} {
-                $report newLine
-                incr lincount -1
-            }
-            set line [format {%40s} "($pageNo)"]
-            $report text $line
-            $report newLine
-            $report destroy
-        }
-        if {$format in {screen both}} {
-            $reportText insert end "$line\n"
-            $reportText see end
-        }
+        ReceiptPrinter $format $todaysTransactions $reportText $cashOnHand
     }
 }
 
