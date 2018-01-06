@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Tue Dec 26 13:20:43 2017
-#  Last Modified : <180105.1418>
+#  Last Modified : <180106.1152>
 #
 #  Description	
 #
@@ -58,7 +58,7 @@ snit::type ReceiptPrinter {
     typevariable receiptId
     
     typeconstructor {
-        set logo DWSLogo
+        set logo ::DWSLogo
     }
     typemethod printReceipt {payment {withSig no}} {
         if {[catch {set printer [POSReceiptPrinter create %AUTO% "/dev/RECEIPTS"]} err]} {
@@ -66,7 +66,7 @@ snit::type ReceiptPrinter {
         }
         $printer internationCharSet usa
         $printer setAbsPrintPos 0
-        $printer printRasterBitImage [$logo width] [$logo height] [$logo data]
+        $printer printRasterBitImage [$logo Width] [$logo Height] [$logo Bits]
         $printer printAndFeed 1
         $printer selectFontB
         set paymentMethod [[$payment cget -payer] cget -paymentmethod]
@@ -140,7 +140,7 @@ snit::type ReceiptPrinter {
             }
             $printer internationCharSet usa
             $printer setAbsPrintPos 0
-            $printer printRasterBitImage [$logo width] [$logo height] [$logo data]
+            $printer printRasterBitImage [$logo Width] [$logo Height] [$logo Bits]
             $printer printAndFeed 1
             $printer selectFontB
         }

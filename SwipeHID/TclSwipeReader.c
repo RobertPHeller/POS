@@ -8,7 +8,7 @@
  *  Author        : $Author$
  *  Created By    : Robert Heller
  *  Created       : Fri Jan 5 14:42:14 2018
- *  Last Modified : <180105.1540>
+ *  Last Modified : <180106.1108>
  *
  *  Description	
  *
@@ -495,6 +495,9 @@ SwipeInputProc(
 #endif
     
     if (eventBuffer.code == KEY_ENTER) {
+#ifdef DEBUG
+        fprintf(stderr,"*** SwipeInputProc(): code is KEY_ENTER\n");
+#endif
         *buf++ = '\r';
         *buf++ = '\n';
         *buf++ = '\0';
@@ -502,11 +505,17 @@ SwipeInputProc(
     }
 
     if (shift) {
-        *buf++ = shiftedkeys[eventBuffer.code];
+#ifdef DEBUG
+        fprintf(stderr,"*** SwipeInputProc(): shifted code char is '%s'\n",shiftedkeys[eventBuffer.code]);
+#endif
+        *buf++ = shiftedkeys[eventBuffer.code][0];
         *buf++ = '\0';
         return 1;
     } else {
-        *buf++ = keys[eventBuffer.code];
+#ifdef DEBUG
+        fprintf(stderr,"*** SwipeInputProc(): not shifted code char is '%s'\n",keys[eventBuffer.code]);
+#endif
+        *buf++ = keys[eventBuffer.code][0];
         *buf++ = '\0';
         return 1;
     }

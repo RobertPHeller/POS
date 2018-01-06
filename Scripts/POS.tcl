@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Sat Dec 23 12:19:53 2017
-#  Last Modified : <180105.1422>
+#  Last Modified : <180106.1203>
 #
 #  Description	
 #
@@ -105,8 +105,8 @@ snit::type Product {
         set askCashDialog {}
         set ConfigurationBody [list ReadConfiguration::ConfigurationType \
                                [list "Product File" productFile infile products.xml] \
-                               [list "Receipt Printer" receiptPrinter string ReceiptPrinter] \
-                               [list "Card Swipe Device" cardSwipe string hiddev1] \
+                               [list "Receipt Printer" receiptPrinter string /dev/RECEIPTS] \
+                               [list "Card Swipe Device" cardSwipe string /dev/SWIPEEVENT] \
                                [list "PayPal URL" paypalURL string https://api.paypal.com] \
                                [list "PayPal ClientID" paypalClientID string ""] \
                                [list "PayPal Secret" paypalSecret string ""] \
@@ -139,6 +139,7 @@ snit::type Product {
             set price [$price data]
             $type create %AUTO% -name $name -price $price
         }}
+        Swipe open [::Configuration getoption cardSwipe]
         sqlite3 SaleDB [::Configuration getoption saleDB]
         $type CreateSalesTables
         set Main [mainwindow .main -countvariable [mytypevar itemcount] \
@@ -455,7 +456,7 @@ snit::type Product {
                 $payer configure -paymentmethod "creditcard"
                 $payer configure -fundinginstruments \
                       [list [::PayPalObjects::FundingInstrument create %AUTO% \
-                             -creditcard [::Swipe::SwipeCard]]]
+                             -creditcard [Swipe SwipeCard]]]
             }
         }
         set payment [::PayPalObjects::Payment create %AUTO% \
@@ -476,7 +477,7 @@ snit::type Product {
             }
         }
         #puts stderr "*** $type _Checkout: [$payment JSon]"
-        if {saleMode ne "cash"} {
+        if {$saleMode ne "cash"} {
             ReceiptPrinter printReceipt $payment yes
             tk_messageBox -icon info -type ok -message "Get Signature"
         }

@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Sat Dec 23 11:02:08 2017
-#  Last Modified : <180105.1545>
+#  Last Modified : <180106.1144>
 #
 #  Description	
 #
@@ -49,7 +49,7 @@ lib_LTLIBRARIES = libswipereader.la
 libswipereader_la_SOURCES = TclSwipeReader.c TclSwipeReader_wrap.c
 libswipereader_la_LDFLAGS = -g -version-info 0:0:0
 INCLUDES = -I$(top_builddir) -I$(srcdir) -I$(srcdir)/.. $(TCL_INCLUDES)
-libswipereader_la_CFLAGS = -g -DUSE_TCL_STUBS $(INCLUDES) -Wall -DDEBUG
+libswipereader_la_CFLAGS = -g -DUSE_TCL_STUBS $(INCLUDES) -Wall
 libswipereader_la_LIBADD   = $(TCL_STUB_LIB_SPEC)
 BUILT_SOURCES = TclSwipeReader_wrap.c
 noinst_SCRIPTS = pkgIndex.tcl
@@ -63,6 +63,6 @@ TclSwipeReader_wrap.c : TclSwipeReader.i $(pkginclude_HEADERS) \
 	$(srcdir)/TclSwipeReader.i
                 
 pkgIndex.tcl: libswipereader.la $(top_builddir)/config.status
-	echo 'package ifneeded Tclswipereader 1.0.0 [list load [file join $$dir libswipereader[info sharedlibextension]]]' > pkgIndex.tcl
+	echo 'package ifneeded Tclswipereader 1.0.0 [list load [file join $$dir libswipereader[info sharedlibextension]] Tclswipereader]' > pkgIndex.tcl
 
         
