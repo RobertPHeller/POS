@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Tue Dec 26 12:07:26 2017
-#  Last Modified : <180106.1610>
+#  Last Modified : <180106.1657>
 #
 #  Description	
 #
@@ -147,6 +147,10 @@ snit::type Swipe {
         puts stderr "$type _swipe: card = $card"
         if {[regexp $CardPattern $card => cardno name expyearXX expmonthXX] > 0} {
             puts stderr "$type _swipe: cardno is $cardno, name is $name, expyearXX is $expyearXX, expmonthXX is $expmonthXX"
+            if {![checkLuhn $cardno]} {
+                tk_messageBox -icon warning -type ok -message "Invalid card number: $cardno!"
+                return
+            }
             set expyear  [format "20%2s" $expyearXX]
             set expmonth [scan $expmonthXX "%02d"]
             puts stderr "$type _swipe: expyear is $expyear, expmonth is $expmonth"
@@ -164,7 +168,22 @@ snit::type Swipe {
             $swipeask itemconfigure ok -state enabled
         }
     }
-    
+    proc checkLuhn {purportedCC} {
+        set sum 0
+        set nDigits [string length $purportedCC]
+        set parity  [expr {$nDigits % 2}]
+        for {set i 0} {$i < $nDigits} {incr i} {
+            set digit [string index $purportedCC $i]
+            if {($ % 2) == $parity} {
+                set digit [expr {$digit * 2}]
+                if {$digit > 9} {
+                    incr digit -9
+                }
+            }
+            incr sum $digit
+        }
+        return [expr {($sum % 10) == 0}]
+    }
 }
     
 package provide swipeAPI 1.0
