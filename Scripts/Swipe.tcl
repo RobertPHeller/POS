@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Tue Dec 26 12:07:26 2017
-#  Last Modified : <180106.1250>
+#  Last Modified : <180106.1610>
 #
 #  Description	
 #
@@ -54,6 +54,7 @@ snit::type Swipe {
     pragma -hasinstances   no
     typecomponent reader
     typecomponent swipeask
+    typecomponent cvv2LE
     typevariable  cardno
     typevariable  expmonth
     typevariable  expyear
@@ -70,8 +71,9 @@ snit::type Swipe {
     typeconstructor {
         set reader {}
         set swipeask [Dialog .swipe -title "Swipe Card" \
-                      -modal none -side bottom]
-        $swipeask add dismis -text Dismis -state disabled -command [mytypemethod _dismis_swipeask]
+                      -modal local -side bottom -default 0 -cancel 1]
+        $swipeask add ok -text OK -state disabled -command [mytypemethod _ok_swipeask]
+        $swipeask add cancel -text Cancel -command [mytypemethod _cancel_swipeask]
         set frame [$swipeask getframe]
         set cardnoLE [LabelEntry $frame.cardnoLE -label "Card No.:" \
                       -state readonly -textvariable [mytypevar cardno]]
@@ -96,60 +98,73 @@ snit::type Swipe {
         pack [ttk::entry [$nameLF getframe].l \
               -textvariable [mytypevar last] \
               -state readonly] -side left -expand yes -fill x
-        set cardtypeLE [LabelEntry $frame.cardtypeLE \
+        set cardtypeLE [LabelComboBox $frame.cardtypeLE \
                         -label "Card  type:" \
-                        -textvariable [mytypevar cardtype]]
+                        -textvariable [mytypevar cardtype] \
+                        -values {AMEX Visa MasterCard Discover} -editable no]
         pack $cardtypeLE -expand yes -fill x
         set cvv2LE [LabelEntry $frame.cvv2LE \
                     -label "CVV2:" -textvariable [mytypevar cvv2]]
         pack $cvv2LE -expand yes -fill x
     }
+    typemethod _ok_swipeask {} {
+        set result [::PayPalObjects::CreditCard create %AUTO% \
+                    -number $cardno \
+                    -type   $cardtype \
+                    -expiremonth $expmonth \
+                    -expireyear $expyear \
+                    -cvv2 $cvv2 \
+                    -firstname $first \
+                    -lastname $last]
+        $swipeask withdraw
+        return [$swipeask enddialog $result]
+    }
+    typemethod _cancel_swipeask {} {
+        fileevent $reader readable {}
+        $swipeask withdraw
+        return [$swipeask enddialog {}]
+    }
     typemethod open {readerdev} {
-        set reader [SwipeReader $readerdev]
+        if {[catch {SwipeReader $readerdev} reader]} {
+            tk_messageBox -icon error -type ok -message "Could not open swiper: $reader"
+        }
     }
     typemethod SwipeCard {} {
-        $swipeask draw
-        update idle
-        while {1} {
-            set card [gets $reader]
-            puts stderr "$type SwipeCard: card = $card"
-            if {[regexp $CardPattern $card => cardno name expyearXX expmonthXX] > 0} {
-                
-                set expyear  [format "20%2s" $expyearXX]
-                set expmonth [scan $expmonthXX "%02d"]
-                if {[regexp $NamePattern1 $name => last first]} {
-                    set card [::PayPalObjects::CreditCard create %AUTO% \
-                              -expiremonth $expmonth \
-                              -expireyear  $expyear \
-                              -number      $cardno \
-                              -firstname   $first \
-                              -lastname    $last]
-                } elseif {[regexp $NamePattern2 $name => first last]} {
-                    set card [::PayPalObjects::CreditCard create %AUTO% \
-                              -expiremonth $expmonth \
-                              -expireyear  $expyear \
-                              -number      $cardno \
-                              -firstname   $first \
-                              -lastname    $last]
-                }
-                ## get type and cvv2
-                $swipeask itemconfigure dismis -state normal
-                set savedgrab [grab current]
-                if {[winfo exists $savedgrab]} {
-                    set savedgrabopt [grab status $savedgrab]
-                }
-                grab $swipeask
-                if {[info exists flag]} {unset flag}
-                tkwait variable [mytypevar flag]
-                $swipeask withdraw                
-                $swipeask itemconfigure dismis -state disabled
-                $card configure -type $cardtype
-                $card configure -cvv2 $cvv2
-                return $card
-            }
-        }
-        
+        fileevent $reader readable [mytypemethod _swipe]
+        set cardno {}
+        set expmonth {}
+        set expyear {}
+        set first {}
+        set last {}
+        set cardtype Visa
+        set cvv2 {}
+        $swipeask itemconfigure ok -state disabled
+        set result [$swipeask draw]
+        return $result
     }
+    typemethod _swipe {} {
+        set card [gets $reader]
+        puts stderr "$type _swipe: card = $card"
+        if {[regexp $CardPattern $card => cardno name expyearXX expmonthXX] > 0} {
+            puts stderr "$type _swipe: cardno is $cardno, name is $name, expyearXX is $expyearXX, expmonthXX is $expmonthXX"
+            set expyear  [format "20%2s" $expyearXX]
+            set expmonth [scan $expmonthXX "%02d"]
+            puts stderr "$type _swipe: expyear is $expyear, expmonth is $expmonth"
+            if {[regexp $NamePattern1 $name => last first] < 1} {
+                regexp $NamePattern2 $name => first last
+            }
+            switch [string range $cardno 0 0] {
+                3 {set cardtype AMEX}
+                4 {set cardtype Visa}
+                5 {set cardtype MasterCard}
+                6 {set cardtype Discover}
+            }
+            puts stderr "$type _swipe: first is $first, last is $last"
+            fileevent $reader readable {}
+            $swipeask itemconfigure ok -state enabled
+        }
+    }
+    
 }
     
 package provide swipeAPI 1.0
