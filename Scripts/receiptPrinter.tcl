@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Tue Dec 26 13:20:43 2017
-#  Last Modified : <180106.1349>
+#  Last Modified : <180106.1834>
 #
 #  Description	
 #
@@ -61,8 +61,8 @@ snit::type ReceiptPrinter {
         set logo ::DWSLogo
     }
     typemethod printReceipt {payment {withSig no}} {
-        if {[catch {set printer [POSReceiptPrinter create %AUTO% "/dev/RECEIPTS"]} err]} {
-            error "Cannot open receipt printer (/dev/RECEIPTS): $err"
+        if {[catch {set printer [POSReceiptPrinter create %AUTO% [::Configuration getoption receiptPrinter]]} err]} {
+            error "Cannot open receipt printer ([::Configuration getoption receiptPrinter]): $err"
         }
         $printer internationCharSet usa
         $printer setAbsPrintPos 0
@@ -105,6 +105,7 @@ snit::type ReceiptPrinter {
         $printer printAndFeed 1
         set line [format {%2s %2s %-20.20s  %5s  %6s} No Q Descr Price Extend]
         $printer textLine $line
+        set i 0
         foreach item $items {
             incr i
             set q [$item cget -quantity]
@@ -142,8 +143,8 @@ snit::type ReceiptPrinter {
         set cashintotal      0
         set creditintotal    0
         if {$format in {printer both}} {
-            if {[catch {set printer [POSReceiptPrinter create %AUTO% "/dev/RECEIPTS"]} err]} {
-                error "Cannot open receipt printer (/dev/RECEIPTS): $err"
+            if {[catch {set printer [POSReceiptPrinter create %AUTO% [::Configuration getoption receiptPrinter]]} err]} {
+                error "Cannot open receipt printer ([::Configuration getoption receiptPrinter]): $err"
             }
             $printer internationCharSet usa
             $printer setAbsPrintPos 0

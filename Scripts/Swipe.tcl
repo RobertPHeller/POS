@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Tue Dec 26 12:07:26 2017
-#  Last Modified : <180106.1657>
+#  Last Modified : <180106.1831>
 #
 #  Description	
 #
@@ -55,6 +55,7 @@ snit::type Swipe {
     typecomponent reader
     typecomponent swipeask
     typecomponent cvv2LE
+    typecomponent nowhere
     typevariable  cardno
     typevariable  expmonth
     typevariable  expyear
@@ -106,6 +107,7 @@ snit::type Swipe {
         set cvv2LE [LabelEntry $frame.cvv2LE \
                     -label "CVV2:" -textvariable [mytypevar cvv2]]
         pack $cvv2LE -expand yes -fill x
+        set nowhere [entry $frame.nowhere]
     }
     typemethod _ok_swipeask {} {
         set result [::PayPalObjects::CreditCard create %AUTO% \
@@ -131,6 +133,7 @@ snit::type Swipe {
     }
     typemethod SwipeCard {} {
         fileevent $reader readable [mytypemethod _swipe]
+        focus $nowhere
         set cardno {}
         set expmonth {}
         set expyear {}
@@ -165,7 +168,9 @@ snit::type Swipe {
             }
             puts stderr "$type _swipe: first is $first, last is $last"
             fileevent $reader readable {}
+            update idle
             $swipeask itemconfigure ok -state enabled
+            set cvv2 {}
         }
     }
     proc checkLuhn {purportedCC} {
@@ -174,7 +179,7 @@ snit::type Swipe {
         set parity  [expr {$nDigits % 2}]
         for {set i 0} {$i < $nDigits} {incr i} {
             set digit [string index $purportedCC $i]
-            if {($ % 2) == $parity} {
+            if {($i % 2) == $parity} {
                 set digit [expr {$digit * 2}]
                 if {$digit > 9} {
                     incr digit -9

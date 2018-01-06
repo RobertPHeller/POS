@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Sat Dec 23 12:19:53 2017
-#  Last Modified : <180106.1203>
+#  Last Modified : <180106.1837>
 #
 #  Description	
 #
@@ -77,6 +77,7 @@ snit::type Product {
     typevariable todaysTransactions [list]
     typecomponent productDB
     typecomponent AddFrame
+    typecomponent checkOutButton
     typevariable AllProducts [list]
     typemethod PriceOfProduct {name} {
         foreach p $AllProducts {
@@ -198,7 +199,7 @@ snit::type Product {
             pack $rb -side left -expand yes -fill x
         }
         set checkOutButton [ttk::button $AddFrame.checkOutButton \
-                            -text "Checkout" \
+                            -text "Checkout" -state disabled \
                             -command [mytypemethod _Checkout]]
         pack $checkOutButton -expand yes -fill x
         bind all <c> [list  $checkOutButton invoke]
@@ -402,6 +403,7 @@ snit::type Product {
         grid $SalesCart.del$indexcount -row $row -column 5 -sticky news
         set newProdQnt 1
         set newProdName [lindex [$AddFrame.newProdName cget -value] 0]
+        $checkOutButton configure -state normal
     }
     typemethod _deleteItem {ic} {
         destroy $SalesCart.count$ic  $SalesCart.qnty$ic $SalesCart.descr$ic \
@@ -420,6 +422,10 @@ snit::type Product {
         }
         set grandtotalF [format {$%5.2f} $grandtotal]
         incr itemcount -1
+        if {$itemcount == 0} {
+            $checkOutButton configure -state disabled
+        }
+        
     }
     typemethod _updateItem {ic} {
         set grandtotal 0
@@ -497,6 +503,7 @@ snit::type Product {
         set indexcount 0
         set itemcount 0
         set grandtotal 0
+        $checkOutButton configure -state disabled
         set grandtotalF [format {$%5.2f} $grandtotal]
     }
     typemethod _VoidCart {} {
@@ -505,6 +512,7 @@ snit::type Product {
             destroy $c
         }
         set indexcount 0
+        $checkOutButton configure -state disabled
         set itemcount 0
         set grandtotal 0
         set grandtotalF [format {$%5.2f} $grandtotal]

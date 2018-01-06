@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Wed Jul 10 16:07:16 2013
-#  Last Modified : <171227.1337>
+#  Last Modified : <180106.1827>
 #
 #  Description	
 #
@@ -102,6 +102,8 @@ snit::widget LabelEntry {
         pack $label -side left
         install entry using ttk::entry $win.entry
         pack $entry -side left -fill x -expand yes
+        $hull configure -takefocus 1
+        bind $win <FocusIn> "focus $entry"
         $self configurelist $args
     }
     method bind {sequence script} {
