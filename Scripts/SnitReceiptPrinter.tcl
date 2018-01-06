@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Thu Jan 4 19:47:45 2018
-#  Last Modified : <180105.1258>
+#  Last Modified : <180106.1345>
 #
 #  Description	
 #
@@ -227,6 +227,23 @@ snit::type POSReceiptPrinter {
         $self _xputchar [expr {($height >> 8) & 0x0ff}]
         foreach b $data {$self _xputchar $b}
     }
+    method selectCharacterSize {height width} {
+        $self _xputchar 0x1d
+        $self _putchar "!"
+        set byte 0
+        switch $height {
+            double {set byte 1}
+            default -
+            single {set byte 0}
+        }
+        switch $width {
+            double {set byte [expr {$byte | 0x10}]}
+            default -
+            single {set byte [expr {$byte & 0x0F}]}
+        }
+        $self _xputchar $byte
+    }
+            
 }
 
 

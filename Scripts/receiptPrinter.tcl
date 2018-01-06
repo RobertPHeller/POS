@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Tue Dec 26 13:20:43 2017
-#  Last Modified : <180106.1152>
+#  Last Modified : <180106.1349>
 #
 #  Description	
 #
@@ -66,9 +66,14 @@ snit::type ReceiptPrinter {
         }
         $printer internationCharSet usa
         $printer setAbsPrintPos 0
-        $printer printRasterBitImage [$logo Width] [$logo Height] [$logo Bits]
+        #$printer printRasterBitImage [$logo Width] [$logo Height] [$logo Bits]
+        $printer selectFontA
+        $printer selectCharacterSize double double
+        $printer textLine "DEEPWOODS"
+        $printer textLine "SOFTWARE"
         $printer printAndFeed 1
         $printer selectFontB
+        $printer selectCharacterSize single single
         set paymentMethod [[$payment cget -payer] cget -paymentmethod]
         set receiptId [$payment cget -id]
         set receiptTimeStamp [clock scan [$payment cget -createtime] \
@@ -86,10 +91,12 @@ snit::type ReceiptPrinter {
         if {$withSig} {
             $type putSignature $cc
         }
-        $printer destory
+        $printer printAndFeed 10
+        $printer destroy
         set printer {}
     }
     typemethod putBasicPage {items footer} {
+        set total 0.0
         set line [clock format $receiptTimeStamp -format {%Y-%m-%d  %H:%M:%S}]
         $printer textLine $line
         $printer printAndFeed 2
@@ -140,9 +147,15 @@ snit::type ReceiptPrinter {
             }
             $printer internationCharSet usa
             $printer setAbsPrintPos 0
-            $printer printRasterBitImage [$logo Width] [$logo Height] [$logo Bits]
+            #$printer printRasterBitImage [$logo Width] [$logo Height] [$logo Bits]
+            $printer selectFontA
+            $printer selectCharacterSize double double
+            $printer textLine "DEEPWOODS"
+            $printer textLine "SOFTWARE"
+            $printer selectCharacterSize single single
             $printer printAndFeed 1
             $printer selectFontB
+            $printer selectCharacterSize single single
         }
         set line [format {%19s %8s %4.4s %8s} "Transaction" "Time" "Mode" "Total"]
         if {$format in {printer both}} {
@@ -166,7 +179,7 @@ snit::type ReceiptPrinter {
                     set creditintotal [expr {$creditintotal + $total}]
                 }
             }
-            set line [format {%19s %8s %4.4s $%7.2f} $transId $createtime $paymentmethod $total]
+            set line [format {%19s %8s %4.4s $%7.2f} $transId $cretime $paymentmethod $total]
             if {$format in {printer both}} {
                 $printer textLine $line
             }
@@ -202,7 +215,7 @@ snit::type ReceiptPrinter {
         set line [format {%19s %8s %4.4s $%7.2f} "Cash On Hand" {} {} $cashOnHand]
         if {$format in {printer both}} {
             $printer textLine $line
-            $printer printAndFeed 5
+            $printer printAndFeed 10
             $printer destroy
         }
         if {$format in {screen both}} {
