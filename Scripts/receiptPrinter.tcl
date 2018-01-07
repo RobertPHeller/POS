@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Tue Dec 26 13:20:43 2017
-#  Last Modified : <180106.1834>
+#  Last Modified : <180107.1103>
 #
 #  Description	
 #
@@ -69,11 +69,13 @@ snit::type ReceiptPrinter {
         #$printer printRasterBitImage [$logo Width] [$logo Height] [$logo Bits]
         $printer selectFontA
         $printer selectCharacterSize double double
+        $printer selectCenterJustification
         $printer textLine "DEEPWOODS"
         $printer textLine "SOFTWARE"
-        $printer printAndFeed 1
+        $printer feed 1
         $printer selectFontB
         $printer selectCharacterSize single single
+        $printer selectLeftJustification
         set paymentMethod [[$payment cget -payer] cget -paymentmethod]
         set receiptId [$payment cget -id]
         set receiptTimeStamp [clock scan [$payment cget -createtime] \
@@ -91,7 +93,7 @@ snit::type ReceiptPrinter {
         if {$withSig} {
             $type putSignature $cc
         }
-        $printer printAndFeed 10
+        $printer feed 5
         $printer destroy
         set printer {}
     }
@@ -99,10 +101,10 @@ snit::type ReceiptPrinter {
         set total 0.0
         set line [clock format $receiptTimeStamp -format {%Y-%m-%d  %H:%M:%S}]
         $printer textLine $line
-        $printer printAndFeed 2
+        $printer feed 2
         set line [format {Receipt Id: %-30s} $receiptId]
         $printer textLine $line
-        $printer printAndFeed 1
+        $printer feed 1
         set line [format {%2s %2s %-20.20s  %5s  %6s} No Q Descr Price Extend]
         $printer textLine $line
         set i 0
@@ -120,20 +122,20 @@ snit::type ReceiptPrinter {
         $printer textLine $line
         set line [format {%2d   %-20.20s         $%6.2f} $i Total $total]
         $printer textLine $line
-        $printer printAndFeed 5
+        $printer feed 5
     }
     typemethod putSignature {cc} {
         set name "[$cc cget -firstname] [$cc cget -lastname]"
-        $printer printAndFeed 3
+        $printer feed 3
         $printer selectFontA
         set line [format {%32.32s} $name]
         $printer textLine $line
-        $printer printAndFeed 2
+        $printer feed 2
         set line "[string repeat { } 32]"
         $printer underlineOnThick
         $printer textLine $line
         $printer underlineOff
-        $printer printAndFeed 2
+        $printer feed 2
         $printer selectFontB
     }
     typemethod printReport {format todaysTransactions reportText cashOnHand} {
@@ -151,12 +153,19 @@ snit::type ReceiptPrinter {
             #$printer printRasterBitImage [$logo Width] [$logo Height] [$logo Bits]
             $printer selectFontA
             $printer selectCharacterSize double double
+            $printer selectCenterJustification
             $printer textLine "DEEPWOODS"
             $printer textLine "SOFTWARE"
             $printer selectCharacterSize single single
-            $printer printAndFeed 1
+            $printer feed 1
             $printer selectFontB
             $printer selectCharacterSize single single
+            $printer feed 1
+            $printer textLine "Cash Out Report"
+            set line [clock format [clock seconds] -format {%Y-%m-%d  %H:%M:%S}]
+            $printer textLine $line
+            $printer feed 1
+            $printer selectLeftJustification
         }
         set line [format {%19s %8s %4.4s %8s} "Transaction" "Time" "Mode" "Total"]
         if {$format in {printer both}} {
@@ -216,7 +225,7 @@ snit::type ReceiptPrinter {
         set line [format {%19s %8s %4.4s $%7.2f} "Cash On Hand" {} {} $cashOnHand]
         if {$format in {printer both}} {
             $printer textLine $line
-            $printer printAndFeed 10
+            $printer feed 5
             $printer destroy
         }
         if {$format in {screen both}} {
