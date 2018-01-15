@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Tue Dec 26 12:07:26 2017
-#  Last Modified : <180106.1831>
+#  Last Modified : <180115.1121>
 #
 #  Description	
 #
@@ -132,6 +132,7 @@ snit::type Swipe {
         }
     }
     typemethod SwipeCard {} {
+        $cvv2LE bind <Return> {}
         fileevent $reader readable [mytypemethod _swipe]
         focus $nowhere
         set cardno {}
@@ -147,16 +148,16 @@ snit::type Swipe {
     }
     typemethod _swipe {} {
         set card [gets $reader]
-        puts stderr "$type _swipe: card = $card"
+        #puts stderr "$type _swipe: card = $card"
         if {[regexp $CardPattern $card => cardno name expyearXX expmonthXX] > 0} {
-            puts stderr "$type _swipe: cardno is $cardno, name is $name, expyearXX is $expyearXX, expmonthXX is $expmonthXX"
+            #puts stderr "$type _swipe: cardno is $cardno, name is $name, expyearXX is $expyearXX, expmonthXX is $expmonthXX"
             if {![checkLuhn $cardno]} {
                 tk_messageBox -icon warning -type ok -message "Invalid card number: $cardno!"
                 return
             }
             set expyear  [format "20%2s" $expyearXX]
             set expmonth [scan $expmonthXX "%02d"]
-            puts stderr "$type _swipe: expyear is $expyear, expmonth is $expmonth"
+            #puts stderr "$type _swipe: expyear is $expyear, expmonth is $expmonth"
             if {[regexp $NamePattern1 $name => last first] < 1} {
                 regexp $NamePattern2 $name => first last
             }
@@ -166,10 +167,12 @@ snit::type Swipe {
                 5 {set cardtype MasterCard}
                 6 {set cardtype Discover}
             }
-            puts stderr "$type _swipe: first is $first, last is $last"
+            #puts stderr "$type _swipe: first is $first, last is $last"
             fileevent $reader readable {}
             update idle
             $swipeask itemconfigure ok -state enabled
+            focus $cvv2LE
+            $cvv2LE bind <Return> [mytypemethod _ok_swipeask]
             set cvv2 {}
         }
     }

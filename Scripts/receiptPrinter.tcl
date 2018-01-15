@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Tue Dec 26 13:20:43 2017
-#  Last Modified : <180107.1103>
+#  Last Modified : <180115.1045>
 #
 #  Description	
 #
@@ -86,14 +86,14 @@ snit::type ReceiptPrinter {
             set cc [[lindex [[$payment cget -payer] cget -fundinginstruments] 0] cget -creditcard]
             set n [$cc cget -number]
             set nStar "************[string range $n 12 end]"
-            $type putBasicPage $items "Credit Card Sale $nStar"
+            $type putBasicPage $items "Credit Card Sale [$cc cget -type] $nStar"
         } else {
             $type putBasicPage $items "Cash Sale"
         }
         if {$withSig} {
             $type putSignature $cc
         }
-        $printer feed 5
+        $printer feed 2
         $printer destroy
         set printer {}
     }
@@ -122,19 +122,20 @@ snit::type ReceiptPrinter {
         $printer textLine $line
         set line [format {%2d   %-20.20s         $%6.2f} $i Total $total]
         $printer textLine $line
-        $printer feed 5
+        $printer textLine $footer
+        $printer feed 2
     }
     typemethod putSignature {cc} {
         set name "[$cc cget -firstname] [$cc cget -lastname]"
-        $printer feed 3
         $printer selectFontA
-        set line [format {%32.32s} $name]
+        $printer selectLeftJustification
+        set line [format {%-32.32s} $name]
         $printer textLine $line
         $printer feed 2
-        set line "[string repeat { } 32]"
-        $printer underlineOnThick
+        set line "[string repeat {-} 32]"
+        #$printer underlineOnThick
         $printer textLine $line
-        $printer underlineOff
+        #$printer underlineOff
         $printer feed 2
         $printer selectFontB
     }
